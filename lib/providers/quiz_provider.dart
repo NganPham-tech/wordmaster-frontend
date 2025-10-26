@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';
-import '../models/quiz_topic.dart';
+﻿import 'package:flutter/material.dart';
+import '../data/models/quiz_topic_model.dart';
 import '../data/quiz_api.dart';
 
 class QuizProvider with ChangeNotifier {
@@ -12,7 +12,6 @@ class QuizProvider with ChangeNotifier {
   String? _error;
   DateTime? _quizStartTime;
 
-  // Getters
   List<QuizTopic> get topics => _topics;
   List<QuizQuestion> get currentQuestions => _currentQuestions;
   List<int> get userAnswers => _userAnswers;
@@ -28,20 +27,18 @@ class QuizProvider with ChangeNotifier {
       ? _currentQuestions[_currentQuestionIndex]
       : null;
 
-  // Load quiz topics from MySQL via API
   Future<void> loadQuizTopics() async {
     _setLoading(true);
     try {
       _topics = await QuizAPI.getTopics();
       _clearError();
     } catch (e) {
-      _setError('Failed to load quiz topics: $e');
+      _setError('Failed to load quiz topics: 5e');
     } finally {
       _setLoading(false);
     }
   }
 
-  // Start a quiz with selected topic
   Future<void> startQuiz(QuizTopic topic) async {
     _setLoading(true);
     try {
@@ -49,18 +46,15 @@ class QuizProvider with ChangeNotifier {
       _currentQuestionIndex = 0;
       _userAnswers = [];
       _quizStartTime = DateTime.now();
-
-      // Lấy câu hỏi từ MySQL API
       _currentQuestions = await QuizAPI.getQuestions(topic.id);
       _clearError();
     } catch (e) {
-      _setError('Failed to start quiz: $e');
+      _setError('Failed to start quiz: 5e');
     } finally {
       _setLoading(false);
     }
   }
 
-  // Answer current question
   void answerQuestion(int answerIndex) {
     if (_currentQuestionIndex < _userAnswers.length) {
       _userAnswers[_currentQuestionIndex] = answerIndex;
@@ -70,7 +64,6 @@ class QuizProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  // Go to next question
   bool nextQuestion() {
     if (_currentQuestionIndex < _currentQuestions.length - 1) {
       _currentQuestionIndex++;
@@ -80,7 +73,6 @@ class QuizProvider with ChangeNotifier {
     return false;
   }
 
-  // Go to previous question
   bool previousQuestion() {
     if (_currentQuestionIndex > 0) {
       _currentQuestionIndex--;
@@ -90,12 +82,10 @@ class QuizProvider with ChangeNotifier {
     return false;
   }
 
-  // Calculate and get quiz results
   QuizResult getQuizResult() {
     if (_currentTopic == null || _quizStartTime == null) {
       throw Exception('No active quiz to calculate results');
     }
-
     int correctAnswers = 0;
     for (int i = 0; i < _currentQuestions.length; i++) {
       if (i < _userAnswers.length &&
@@ -103,12 +93,10 @@ class QuizProvider with ChangeNotifier {
         correctAnswers++;
       }
     }
-
     int totalQuestions = _currentQuestions.length;
     int wrongAnswers = totalQuestions - correctAnswers;
     double percentage = (correctAnswers / totalQuestions) * 100;
-    int score = (percentage * 10).round(); // Score out of 1000
-
+    int score = (percentage * 10).round();
     return QuizResult(
       topicId: _currentTopic!.id,
       score: score,
@@ -121,7 +109,6 @@ class QuizProvider with ChangeNotifier {
     );
   }
 
-  // End current quiz
   void endQuiz() {
     _currentTopic = null;
     _currentQuestions = [];
@@ -131,7 +118,6 @@ class QuizProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  // Helper methods
   void _setLoading(bool loading) {
     _isLoading = loading;
     notifyListeners();
@@ -146,7 +132,6 @@ class QuizProvider with ChangeNotifier {
     _error = null;
   }
 
-  // Get difficulty color
   Color getDifficultyColor(String difficulty) {
     switch (difficulty.toLowerCase()) {
       case 'easy':
@@ -160,7 +145,6 @@ class QuizProvider with ChangeNotifier {
     }
   }
 
-  // Get difficulty icon
   IconData getDifficultyIcon(String difficulty) {
     switch (difficulty.toLowerCase()) {
       case 'easy':

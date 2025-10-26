@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../models/quiz_topic.dart';
+import '../../data/models/quiz_topic_model.dart';
 
 class QuizResultScreen extends StatelessWidget {
   final QuizResult result;
@@ -9,13 +9,15 @@ class QuizResultScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         title: const Text(
           'Quiz Results',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+          style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
         ),
-        backgroundColor: Theme.of(context).primaryColor,
-        iconTheme: const IconThemeData(color: Colors.white),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Color(0xFF1E293B)),
         automaticallyImplyLeading: false,
       ),
       body: SingleChildScrollView(
@@ -27,18 +29,15 @@ class QuizResultScreen extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Theme.of(context).primaryColor.withOpacity(0.8),
-                    Theme.of(context).primaryColor,
-                  ],
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: Theme.of(context).primaryColor.withOpacity(0.3),
+                    color: const Color(0xFF6366F1).withOpacity(0.3),
                     spreadRadius: 2,
                     blurRadius: 10,
                     offset: const Offset(0, 4),
@@ -94,17 +93,17 @@ class QuizResultScreen extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        Icon(
+                        const Icon(
                           Icons.analytics_outlined,
-                          color: Theme.of(context).primaryColor,
+                          color: Color(0xFF6366F1),
                         ),
                         const SizedBox(width: 8),
                         Text(
                           'Quiz Statistics',
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
-                            color: Theme.of(context).primaryColor,
+                            color: Color(0xFF1E293B),
                           ),
                         ),
                       ],
@@ -117,7 +116,7 @@ class QuizResultScreen extends StatelessWidget {
                             icon: Icons.quiz,
                             label: 'Total Questions',
                             value: '${result.totalQuestions}',
-                            color: Colors.blue,
+                            color: const Color(0xFF6366F1),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -126,7 +125,7 @@ class QuizResultScreen extends StatelessWidget {
                             icon: Icons.check_circle,
                             label: 'Correct',
                             value: '${result.correctAnswers}',
-                            color: Colors.green,
+                            color: const Color(0xFF10B981),
                           ),
                         ),
                       ],
@@ -139,7 +138,7 @@ class QuizResultScreen extends StatelessWidget {
                             icon: Icons.cancel,
                             label: 'Wrong',
                             value: '${result.wrongAnswers}',
-                            color: Colors.red,
+                            color: const Color(0xFFEF4444),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -148,7 +147,7 @@ class QuizResultScreen extends StatelessWidget {
                             icon: Icons.schedule,
                             label: 'Time Taken',
                             value: _formatDuration(result.timeTaken),
-                            color: Colors.orange,
+                            color: const Color(0xFFF59E0B),
                           ),
                         ),
                       ],

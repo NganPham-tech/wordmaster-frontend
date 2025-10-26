@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/quiz_provider.dart';
-import '../../models/quiz_topic.dart';
+import '../../data/models/quiz_topic_model.dart';
 import 'quiz_screen.dart';
 
 class QuizTopicsScreen extends StatefulWidget {
@@ -23,14 +23,16 @@ class _QuizTopicsScreenState extends State<QuizTopicsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         title: const Text(
           'Quiz Topics',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+          style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
         ),
-        backgroundColor: Theme.of(context).primaryColor,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
+        iconTheme: const IconThemeData(color: Color(0xFF1E293B)),
       ),
       body: Consumer<QuizProvider>(
         builder: (context, quizProvider, child) {
@@ -163,12 +165,9 @@ class QuizTopicCard extends StatelessWidget {
                     width: 60,
                     height: 60,
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(8),
-                      gradient: LinearGradient(
-                        colors: [
-                          Theme.of(context).primaryColor.withOpacity(0.8),
-                          Theme.of(context).primaryColor,
-                        ],
+                      borderRadius: BorderRadius.circular(12),
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
@@ -234,13 +233,13 @@ class QuizTopicCard extends StatelessWidget {
                   _InfoChip(
                     icon: Icons.quiz,
                     label: '${topic.questionCount} Questions',
-                    color: Colors.blue,
+                    color: const Color(0xFF6366F1),
                   ),
                   const SizedBox(width: 8),
                   _InfoChip(
                     icon: Icons.schedule,
                     label: '${topic.estimatedTime.inMinutes} min',
-                    color: Colors.green,
+                    color: const Color(0xFF10B981),
                   ),
                 ],
               ),
@@ -305,17 +304,18 @@ class _TagChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.grey[100],
-        borderRadius: BorderRadius.circular(8),
+        color: const Color(0xFF6366F1).withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFF6366F1).withOpacity(0.3)),
       ),
       child: Text(
         tag,
-        style: TextStyle(
-          fontSize: 10,
-          color: Colors.grey[600],
-          fontWeight: FontWeight.w500,
+        style: const TextStyle(
+          fontSize: 11,
+          color: Color(0xFF6366F1),
+          fontWeight: FontWeight.w600,
         ),
       ),
     );

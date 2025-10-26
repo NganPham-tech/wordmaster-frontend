@@ -2,21 +2,19 @@ class QuizTopic {
   final int id;
   final String name;
   final String description;
-  final String imagePath;
-  final int questionCount;
   final String difficulty;
-  final List<String> tags;
+  final int questionCount;
   final Duration estimatedTime;
+  final List<String> tags;
 
   QuizTopic({
     required this.id,
     required this.name,
     required this.description,
-    required this.imagePath,
-    required this.questionCount,
     required this.difficulty,
-    required this.tags,
+    required this.questionCount,
     required this.estimatedTime,
+    required this.tags,
   });
 
   factory QuizTopic.fromMap(Map<String, dynamic> map) {
@@ -24,11 +22,14 @@ class QuizTopic {
       id: map['id'] ?? 0,
       name: map['name'] ?? '',
       description: map['description'] ?? '',
-      imagePath: map['imagePath'] ?? '',
-      questionCount: map['questionCount'] ?? 0,
-      difficulty: map['difficulty'] ?? 'Easy',
-      tags: List<String>.from(map['tags'] ?? []),
-      estimatedTime: Duration(minutes: map['estimatedTimeMinutes'] ?? 10),
+      difficulty: map['difficulty'] ?? 'Medium',
+      questionCount: map['question_count'] ?? 0,
+      estimatedTime: Duration(minutes: map['estimated_time'] ?? 10),
+      tags: map['tags'] != null
+          ? List<String>.from(map['tags'] is String
+              ? (map['tags'] as String).split(',')
+              : map['tags'])
+          : [],
     );
   }
 
@@ -37,11 +38,10 @@ class QuizTopic {
       'id': id,
       'name': name,
       'description': description,
-      'imagePath': imagePath,
-      'questionCount': questionCount,
       'difficulty': difficulty,
-      'tags': tags,
-      'estimatedTimeMinutes': estimatedTime.inMinutes,
+      'question_count': questionCount,
+      'estimated_time': estimatedTime.inMinutes,
+      'tags': tags.join(','),
     };
   }
 }
@@ -53,6 +53,7 @@ class QuizQuestion {
   final int correctAnswerIndex;
   final String explanation;
   final String difficulty;
+  final int points;
 
   QuizQuestion({
     required this.id,
@@ -61,16 +62,27 @@ class QuizQuestion {
     required this.correctAnswerIndex,
     required this.explanation,
     required this.difficulty,
+    this.points = 10,
   });
 
   factory QuizQuestion.fromMap(Map<String, dynamic> map) {
+    List<String> options = [];
+    if (map['options'] != null) {
+      if (map['options'] is String) {
+        options = (map['options'] as String).split('|');
+      } else if (map['options'] is List) {
+        options = List<String>.from(map['options']);
+      }
+    }
+
     return QuizQuestion(
       id: map['id'] ?? 0,
       question: map['question'] ?? '',
-      options: List<String>.from(map['options'] ?? []),
-      correctAnswerIndex: map['correctAnswerIndex'] ?? 0,
+      options: options,
+      correctAnswerIndex: map['correct_answer_index'] ?? 0,
       explanation: map['explanation'] ?? '',
-      difficulty: map['difficulty'] ?? 'Easy',
+      difficulty: map['difficulty'] ?? 'Medium',
+      points: map['points'] ?? 10,
     );
   }
 
@@ -78,10 +90,11 @@ class QuizQuestion {
     return {
       'id': id,
       'question': question,
-      'options': options,
-      'correctAnswerIndex': correctAnswerIndex,
+      'options': options.join('|'),
+      'correct_answer_index': correctAnswerIndex,
       'explanation': explanation,
       'difficulty': difficulty,
+      'points': points,
     };
   }
 }
@@ -109,26 +122,28 @@ class QuizResult {
 
   factory QuizResult.fromMap(Map<String, dynamic> map) {
     return QuizResult(
-      topicId: map['topicId'] ?? 0,
+      topicId: map['topic_id'] ?? 0,
       score: map['score'] ?? 0,
-      totalQuestions: map['totalQuestions'] ?? 0,
-      correctAnswers: map['correctAnswers'] ?? 0,
-      wrongAnswers: map['wrongAnswers'] ?? 0,
-      timeTaken: Duration(seconds: map['timeTakenSeconds'] ?? 0),
-      completedAt: DateTime.fromMillisecondsSinceEpoch(map['completedAt'] ?? 0),
-      percentage: map['percentage']?.toDouble() ?? 0.0,
+      totalQuestions: map['total_questions'] ?? 0,
+      correctAnswers: map['correct_answers'] ?? 0,
+      wrongAnswers: map['wrong_answers'] ?? 0,
+      timeTaken: Duration(seconds: map['time_taken'] ?? 0),
+      completedAt: DateTime.parse(
+        map['completed_at'] ?? DateTime.now().toIso8601String(),
+      ),
+      percentage: map['percentage'] ?? 0.0,
     );
   }
 
   Map<String, dynamic> toMap() {
     return {
-      'topicId': topicId,
+      'topic_id': topicId,
       'score': score,
-      'totalQuestions': totalQuestions,
-      'correctAnswers': correctAnswers,
-      'wrongAnswers': wrongAnswers,
-      'timeTakenSeconds': timeTaken.inSeconds,
-      'completedAt': completedAt.millisecondsSinceEpoch,
+      'total_questions': totalQuestions,
+      'correct_answers': correctAnswers,
+      'wrong_answers': wrongAnswers,
+      'time_taken': timeTaken.inSeconds,
+      'completed_at': completedAt.toIso8601String(),
       'percentage': percentage,
     };
   }

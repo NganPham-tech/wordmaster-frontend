@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/quiz_provider.dart';
-import '../../models/quiz_topic.dart';
+import '../../data/models/quiz_topic_model.dart';
 import 'quiz_result_screen.dart';
 
 class QuizScreen extends StatefulWidget {
@@ -28,16 +28,18 @@ class _QuizScreenState extends State<QuizScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         title: Text(
           widget.topic.name,
           style: const TextStyle(
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: Color(0xFF1E293B),
           ),
         ),
-        backgroundColor: Theme.of(context).primaryColor,
-        iconTheme: const IconThemeData(color: Colors.white),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Color(0xFF1E293B)),
         actions: [
           IconButton(
             onPressed: () => _showQuitDialog(),
@@ -97,7 +99,23 @@ class _QuizScreenState extends State<QuizScreen> {
               // Progress bar
               Container(
                 padding: const EdgeInsets.all(16),
-                color: Theme.of(context).primaryColor.withOpacity(0.1),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: const BorderRadius.vertical(
+                    bottom: Radius.circular(20),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF6366F1).withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
                 child: Column(
                   children: [
                     Row(
@@ -108,14 +126,15 @@ class _QuizScreenState extends State<QuizScreen> {
                           style: const TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
+                            color: Colors.white,
                           ),
                         ),
                         Text(
                           '${(progress * 100).round()}%',
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
-                            color: Theme.of(context).primaryColor,
+                            color: Colors.white,
                           ),
                         ),
                       ],
@@ -123,10 +142,12 @@ class _QuizScreenState extends State<QuizScreen> {
                     const SizedBox(height: 8),
                     LinearProgressIndicator(
                       value: progress,
-                      backgroundColor: Colors.grey[300],
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        Theme.of(context).primaryColor,
+                      backgroundColor: Colors.white.withOpacity(0.3),
+                      valueColor: const AlwaysStoppedAnimation<Color>(
+                        Colors.white,
                       ),
+                      borderRadius: BorderRadius.circular(10),
+                      minHeight: 6,
                     ),
                   ],
                 ),
@@ -234,7 +255,7 @@ class _QuizScreenState extends State<QuizScreen> {
                                       style: TextStyle(
                                         fontSize: 16,
                                         fontWeight: FontWeight.bold,
-                                        color: Colors.blue[700],
+                                        color: const Color(0xFF6366F1),
                                       ),
                                     ),
                                   ],
@@ -242,9 +263,9 @@ class _QuizScreenState extends State<QuizScreen> {
                                 const SizedBox(height: 8),
                                 Text(
                                   currentQuestion.explanation,
-                                  style: TextStyle(
+                                  style: const TextStyle(
                                     fontSize: 14,
-                                    color: Colors.blue[800],
+                                    color: Color(0xFF475569),
                                     height: 1.4,
                                   ),
                                 ),
@@ -359,11 +380,11 @@ class _QuizScreenState extends State<QuizScreen> {
   Color _getDifficultyColor(String difficulty) {
     switch (difficulty.toLowerCase()) {
       case 'easy':
-        return Colors.green;
+        return const Color(0xFF10B981);
       case 'medium':
-        return Colors.orange;
+        return const Color(0xFFF59E0B);
       case 'hard':
-        return Colors.red;
+        return const Color(0xFFEF4444);
       default:
         return Colors.grey;
     }
@@ -420,14 +441,14 @@ class AnswerOption extends StatelessWidget {
     if (isCorrect != null) {
       // Show results
       if (isCorrect!) {
-        backgroundColor = Colors.green[50]!;
-        borderColor = Colors.green;
-        textColor = Colors.green[800]!;
+        backgroundColor = const Color(0xFF10B981).withOpacity(0.1);
+        borderColor = const Color(0xFF10B981);
+        textColor = const Color(0xFF065F46);
         icon = Icons.check_circle;
       } else if (isSelected) {
-        backgroundColor = Colors.red[50]!;
-        borderColor = Colors.red;
-        textColor = Colors.red[800]!;
+        backgroundColor = const Color(0xFFEF4444).withOpacity(0.1);
+        borderColor = const Color(0xFFEF4444);
+        textColor = const Color(0xFF991B1B);
         icon = Icons.cancel;
       } else {
         backgroundColor = Colors.grey[50]!;
@@ -437,13 +458,13 @@ class AnswerOption extends StatelessWidget {
     } else {
       // Normal state
       if (isSelected) {
-        backgroundColor = Theme.of(context).primaryColor.withOpacity(0.1);
-        borderColor = Theme.of(context).primaryColor;
-        textColor = Theme.of(context).primaryColor;
+        backgroundColor = const Color(0xFF6366F1).withOpacity(0.1);
+        borderColor = const Color(0xFF6366F1);
+        textColor = const Color(0xFF6366F1);
       } else {
         backgroundColor = Colors.white;
         borderColor = Colors.grey[300]!;
-        textColor = Colors.black87;
+        textColor = const Color(0xFF1E293B);
       }
     }
 
