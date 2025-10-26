@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'core/theme/app_theme.dart';
-import 'presentation/screens/home_screen.dart';
 
+import 'screens/main_scaffold.dart';
 void main() {
   runApp(const WordMasterApp());
 }
@@ -14,7 +14,7 @@ class WordMasterApp extends StatelessWidget {
     return MaterialApp(
       title: 'WordMaster',
       theme: AppTheme.lightTheme,
-      home: const HomeScreen(),
+      home: const MainScaffold(),
       debugShowCheckedModeBanner: false,
     );
   }
