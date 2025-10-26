@@ -67,7 +67,8 @@ class QuizAPI {
         question: 'Choose the synonym of "happy"?',
         options: ['Sad', 'Joyful', 'Angry', 'Tired'],
         correctAnswerIndex: 1,
-        explanation: 'Joyful is a synonym of happy, both mean feeling pleasure.',
+        explanation:
+            'Joyful is a synonym of happy, both mean feeling pleasure.',
         difficulty: 'Beginner',
       ),
       QuizQuestion(
@@ -91,7 +92,8 @@ class QuizAPI {
         question: 'Choose the correct spelling:',
         options: ['Recieve', 'Receive', 'Receeve', 'Recive'],
         correctAnswerIndex: 1,
-        explanation: 'The correct spelling is "receive" (i before e except after c).',
+        explanation:
+            'The correct spelling is "receive" (i before e except after c).',
         difficulty: 'Beginner',
       ),
       QuizQuestion(
@@ -99,7 +101,8 @@ class QuizAPI {
         question: 'What does "eloquent" mean?',
         options: ['Silent', 'Fluent in speech', 'Confused', 'Quiet'],
         correctAnswerIndex: 1,
-        explanation: 'Eloquent means fluent or persuasive in speaking or writing.',
+        explanation:
+            'Eloquent means fluent or persuasive in speaking or writing.',
         difficulty: 'Beginner',
       ),
       QuizQuestion(
@@ -107,7 +110,8 @@ class QuizAPI {
         question: 'Choose the synonym of "ancient"?',
         options: ['Modern', 'Old', 'New', 'Recent'],
         correctAnswerIndex: 1,
-        explanation: 'Old is a synonym of ancient, both mean from a long time ago.',
+        explanation:
+            'Old is a synonym of ancient, both mean from a long time ago.',
         difficulty: 'Beginner',
       ),
       QuizQuestion(
@@ -141,7 +145,8 @@ class QuizAPI {
         question: 'Choose the correct form: She ___ to school yesterday.',
         options: ['go', 'went', 'goes', 'going'],
         correctAnswerIndex: 1,
-        explanation: 'Use "went" (past simple) for completed actions in the past.',
+        explanation:
+            'Use "went" (past simple) for completed actions in the past.',
         difficulty: 'Beginner',
       ),
       QuizQuestion(
@@ -149,7 +154,8 @@ class QuizAPI {
         question: 'Which is correct: "He ___ a book now"?',
         options: ['read', 'reads', 'is reading', 'has read'],
         correctAnswerIndex: 2,
-        explanation: 'Use "is reading" (present continuous) for actions happening now.',
+        explanation:
+            'Use "is reading" (present continuous) for actions happening now.',
         difficulty: 'Beginner',
       ),
       QuizQuestion(
@@ -168,7 +174,7 @@ class QuizAPI {
     // Simulate network delay
     await Future.delayed(const Duration(milliseconds: 500));
     return _mockTopics;
-    
+
     // Uncomment below to use real API
     // final response = await ApiService.get('/quiz/topics');
     // if (response['success'] == true) {
@@ -183,7 +189,7 @@ class QuizAPI {
     // Simulate network delay
     await Future.delayed(const Duration(milliseconds: 500));
     return _mockQuestions[topicId] ?? [];
-    
+
     // Uncomment below to use real API
     // final response = await ApiService.get('/quiz/questions?topicId=$topicId');
     // if (response['success'] == true) {

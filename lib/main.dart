@@ -14,9 +14,7 @@ class WordMasterApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => QuizProvider()),
-      ],
+      providers: [ChangeNotifierProvider(create: (_) => QuizProvider())],
       child: MaterialApp(
         title: 'WordMaster',
         theme: AppTheme.lightTheme,

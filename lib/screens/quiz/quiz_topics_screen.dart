@@ -27,7 +27,10 @@ class _QuizTopicsScreenState extends State<QuizTopicsScreen> {
       appBar: AppBar(
         title: const Text(
           'Quiz Topics',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF1E293B),
+          ),
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
