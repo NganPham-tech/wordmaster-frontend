@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'home/home_screen.dart';
 import 'flashcard/flashcard_index_screen.dart';
+import 'quiz/quiz_index_screen.dart';
+
 // Main scaffold với Bottom Navigation Bar
 class MainScaffold extends StatefulWidget {
   const MainScaffold({super.key});
@@ -10,18 +12,19 @@ class MainScaffold extends StatefulWidget {
   State<MainScaffold> createState() => _MainScaffoldState();
 }
 
-class _MainScaffoldState extends State<MainScaffold> with SingleTickerProviderStateMixin {
+class _MainScaffoldState extends State<MainScaffold>
+    with SingleTickerProviderStateMixin {
   int _currentIndex = 0;
   late AnimationController _animationController;
-  
+
   // Badge counts
   final int _studyDueCount = 15; // Số thẻ đến hạn
   final int _practiceChallenges = 3; // Số challenges mới
-  
+
   final List<Widget> _screens = [
     const HomeScreen(),
     const FlashcardIndexScreen(),
-    const PracticeScreen(),
+    const QuizIndexScreen(),
     const ProfileScreen(),
   ];
 
@@ -111,10 +114,7 @@ class _MainScaffoldState extends State<MainScaffold> with SingleTickerProviderSt
             const SizedBox(height: 20),
             const Text(
               'Study Shortcuts',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 20),
             _buildShortcutTile(
@@ -176,10 +176,7 @@ class _MainScaffoldState extends State<MainScaffold> with SingleTickerProviderSt
             const SizedBox(height: 20),
             const Text(
               'Practice Hub',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 20),
             Row(
@@ -245,10 +242,7 @@ class _MainScaffoldState extends State<MainScaffold> with SingleTickerProviderSt
         ),
         child: Icon(icon, color: color),
       ),
-      title: Text(
-        title,
-        style: const TextStyle(fontWeight: FontWeight.w600),
-      ),
+      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
       subtitle: Text(subtitle),
       trailing: const Icon(Icons.arrow_forward_ios, size: 16),
       onTap: onTap,
@@ -279,10 +273,7 @@ class _MainScaffoldState extends State<MainScaffold> with SingleTickerProviderSt
             const SizedBox(height: 8),
             Text(
               title,
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-                color: color,
-              ),
+              style: TextStyle(fontWeight: FontWeight.w600, color: color),
             ),
           ],
         ),
@@ -293,10 +284,7 @@ class _MainScaffoldState extends State<MainScaffold> with SingleTickerProviderSt
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: IndexedStack(
-        index: _currentIndex,
-        children: _screens,
-      ),
+      body: IndexedStack(index: _currentIndex, children: _screens),
       bottomNavigationBar: _buildBottomNavigationBar(),
     );
   }
@@ -365,7 +353,7 @@ class _MainScaffoldState extends State<MainScaffold> with SingleTickerProviderSt
     int? badgeCount,
   }) {
     final isActive = _currentIndex == index;
-    
+
     return BottomNavigationBarItem(
       icon: GestureDetector(
         onLongPress: () => _handleLongPress(index),
@@ -381,17 +369,17 @@ class _MainScaffoldState extends State<MainScaffold> with SingleTickerProviderSt
                     : Colors.transparent,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(
-                isActive ? activeIcon : icon,
-                size: 24,
-              ),
+              child: Icon(isActive ? activeIcon : icon, size: 24),
             ),
             if (badgeCount != null && badgeCount > 0)
               Positioned(
                 right: 0,
                 top: 0,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFEF4444),
                     borderRadius: BorderRadius.circular(10),
@@ -420,49 +408,6 @@ class _MainScaffoldState extends State<MainScaffold> with SingleTickerProviderSt
   }
 }
 
-// Placeholder screens
-
-class PracticeScreen extends StatelessWidget {
-  const PracticeScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      body: SafeArea(
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.school,
-                size: 80,
-                color: Colors.grey[300],
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Practice Screen',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey[400],
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Quiz • Dictation • Shadowing',
-                style: TextStyle(
-                  color: Colors.grey[500],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
@@ -475,11 +420,7 @@ class ProfileScreen extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                Icons.person,
-                size: 80,
-                color: Colors.grey[300],
-              ),
+              Icon(Icons.person, size: 80, color: Colors.grey[300]),
               const SizedBox(height: 16),
               Text(
                 'Profile Screen',
@@ -492,9 +433,7 @@ class ProfileScreen extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 'Stats • Settings • History',
-                style: TextStyle(
-                  color: Colors.grey[500],
-                ),
+                style: TextStyle(color: Colors.grey[500]),
               ),
             ],
           ),
