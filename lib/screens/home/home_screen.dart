@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:wordmaster_dacn/screens/shadowing/shadowing_list_screen.dart';
 import '/data/models/user_model.dart';
-
+import '/screens/dictation/dictation_screen.dart';
+//D:\DemoDACN\wordmaster_dacn\lib\screens\home\home_screen.dart
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -410,7 +412,39 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () {},
+        onTap: () {
+        // Navigate based on action id
+        switch (action.id) {
+          case 'dictation':
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const DictationScreen(),
+              ),
+            );
+            break;
+          case 'flashcards':
+            // TODO: Navigate to Flashcard screen
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Flashcard screen coming soon!')),
+            );
+            break;
+          case 'grammar':
+            // TODO: Navigate to Grammar screen
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Grammar screen coming soon!')),
+            );
+            break;
+          case 'shadowing':
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const ShadowingListScreen(),
+              ),
+            );
+            break;
+        }
+      },
         borderRadius: BorderRadius.circular(16),
         child: Container(
           padding: const EdgeInsets.all(16),
