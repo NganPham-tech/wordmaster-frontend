@@ -1,28 +1,4 @@
 import 'package:flutter/material.dart';
-//
-class User {
-  final String id;
-  final String firstName;
-  final String lastName;
-  final String email;
-  final int currentStreak;
-  final int totalPoints;
-  final int level;
-  final String? avatarUrl;
-
-  User({
-    required this.id,
-    required this.firstName,
-    required this.lastName,
-    required this.email,
-    required this.currentStreak,
-    required this.totalPoints,
-    required this.level,
-    this.avatarUrl,
-  });
-
-  String get fullName => '$firstName $lastName';
-}
 
 class DailyGoal {
   final int targetMinutes;
@@ -39,6 +15,22 @@ class DailyGoal {
 
   double get progressPercentage =>
       (completedMinutes / targetMinutes).clamp(0.0, 1.0);
+}
+
+class QuickAction {
+  final String id;
+  final String title;
+  final IconData icon;
+  final Color color;
+  final int pendingItems;
+
+  QuickAction({
+    required this.id,
+    required this.title,
+    required this.icon,
+    required this.color,
+    this.pendingItems = 0,
+  });
 }
 
 class Deck {
@@ -65,20 +57,4 @@ class Deck {
   });
 
   double get progress => totalCards > 0 ? masteredCards / totalCards : 0;
-}
-
-class QuickAction {
-  final String id;
-  final String title;
-  final IconData icon;
-  final Color color;
-  final int pendingItems;
-
-  QuickAction({
-    required this.id,
-    required this.title,
-    required this.icon,
-    required this.color,
-    this.pendingItems = 0,
-  });
 }

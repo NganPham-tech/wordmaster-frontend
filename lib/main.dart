@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:get/get.dart';
 import 'core/theme/app_theme.dart';
-import 'providers/quiz_provider.dart';
-import 'screens/main_scaffold.dart';
+import 'controllers/auth_controller.dart';
+import 'screens/auth/auth_wrapper.dart';
 
 void main() {
+  // Khởi tạo controllers
+  Get.put(AuthController());
   runApp(const WordMasterApp());
 }
 
@@ -13,14 +15,11 @@ class WordMasterApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MultiProvider(
-      providers: [ChangeNotifierProvider(create: (_) => QuizProvider())],
-      child: MaterialApp(
-        title: 'WordMaster',
-        theme: AppTheme.lightTheme,
-        home: const MainScaffold(),
-        debugShowCheckedModeBanner: false,
-      ),
+    return GetMaterialApp(
+      title: 'WordMaster',
+      theme: AppTheme.lightTheme,
+      home: const AuthWrapper(),
+      debugShowCheckedModeBanner: false,
     );
   }
 }
