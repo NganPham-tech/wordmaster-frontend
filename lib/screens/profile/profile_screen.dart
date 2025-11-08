@@ -41,7 +41,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             children: [
               // Ảnh chào mừng
               Image.asset(
-                'assets/images/welcome.png', // TODO: Thêm minh họa chào mừng
+                '/images/bannerapp.png', // TODO: Thêm minh họa chào mừng
                 height: 200,
               ),
               const SizedBox(height: 32),
