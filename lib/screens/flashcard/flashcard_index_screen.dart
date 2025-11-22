@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'vocab_list_screen.dart';
 import 'grammar_list_screen.dart';
-
+//D:\DemoDACN\wordmaster_dacn\lib\screens\flashcard\flashcard_index_screen.dart
 class FlashcardIndexScreen extends StatelessWidget {
   const FlashcardIndexScreen({super.key});
 

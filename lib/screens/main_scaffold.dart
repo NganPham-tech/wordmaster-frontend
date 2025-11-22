@@ -1,8 +1,12 @@
+// lib/screens/main_scaffold.dart
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'home/home_screen.dart';
 import 'flashcard/flashcard_index_screen.dart';
 import 'quiz/quiz_index_screen.dart';
+import 'profile/profile_screen.dart';
+
+
 
 // Main scaffold với Bottom Navigation Bar
 class MainScaffold extends StatefulWidget {
@@ -25,7 +29,7 @@ class _MainScaffoldState extends State<MainScaffold>
     const HomeScreen(),
     const FlashcardIndexScreen(),
     const QuizIndexScreen(),
-    const ProfileScreen(),
+    const ProfileScreen(), // Sử dụng ProfileScreen từ import
   ];
 
   @override
@@ -404,41 +408,6 @@ class _MainScaffoldState extends State<MainScaffold>
         ),
       ),
       label: label,
-    );
-  }
-}
-
-class ProfileScreen extends StatelessWidget {
-  const ProfileScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      body: SafeArea(
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.person, size: 80, color: Colors.grey[300]),
-              const SizedBox(height: 16),
-              Text(
-                'Profile Screen',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey[400],
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Stats • Settings • History',
-                style: TextStyle(color: Colors.grey[500]),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }

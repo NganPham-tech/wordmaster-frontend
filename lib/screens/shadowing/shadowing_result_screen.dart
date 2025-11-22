@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '/data/models/shadowing_model.dart';
-
+//D:\DemoDACN\wordmaster_dacn\lib\screens\shadowing\shadowing_result_screen.dart
 class ShadowingResultScreen extends StatelessWidget {
   final ShadowingResult result;
 

@@ -37,7 +37,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   void _initializeData() {
     _currentUser = User(
       id: '1',
-      firstName: 'Ngân', // Đổi thành Ngân với dấu
+      firstName: 'Ngân', 
       lastName: 'Ái',
       email: 'ngan@example.com',
       currentStreak: 7,

@@ -4,7 +4,7 @@ import 'widgets/segment_tile.dart';
 import 'widgets/record_button.dart';
 import 'widgets/audio_wave.dart';
 import 'shadowing_result_screen.dart';
-
+//D:\DemoDACN\wordmaster_dacn\lib\screens\shadowing\shadowing_player_screen.dart
 class ShadowingPlayerScreen extends StatefulWidget {
   final ShadowingContent content;
 
@@ -22,7 +22,7 @@ class _ShadowingPlayerScreenState extends State<ShadowingPlayerScreen> {
   bool _isLooping = false;
   RecordState _recordState = RecordState.idle;
   Segment? _currentRecordingSegment;
-  String? _currentRecordingPath;
+  // String? _currentRecordingPath; // Removed unused field
   final Map<String, SegmentResult> _segmentResults = {};
 
   @override

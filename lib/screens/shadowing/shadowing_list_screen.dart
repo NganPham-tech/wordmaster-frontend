@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '/data/models/shadowing_model.dart';
 import 'shadowing_player_screen.dart';
-
+//D:\DemoDACN\wordmaster_dacn\lib\screens\shadowing\shadowing_list_screen.dart
 class ShadowingListScreen extends StatefulWidget {
   const ShadowingListScreen({super.key});
 
@@ -22,7 +22,7 @@ class _ShadowingListScreenState extends State<ShadowingListScreen> {
   }
 
   void _loadContents() {
-    // Mock data với thumbnail và sourceUrl an toàn
+    
     _contents.addAll([
       ShadowingContent(
         id: '1',
