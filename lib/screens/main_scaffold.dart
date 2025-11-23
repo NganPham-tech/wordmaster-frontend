@@ -1,9 +1,12 @@
+// lib/screens/main_scaffold.dart
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'home/home_screen.dart';
 import 'flashcard/flashcard_index_screen.dart';
 import 'quiz/quiz_index_screen.dart';
 import 'profile/profile_screen.dart';
+
+
 
 // Main scaffold với Bottom Navigation Bar
 class MainScaffold extends StatefulWidget {
@@ -26,7 +29,7 @@ class _MainScaffoldState extends State<MainScaffold>
     const HomeScreen(),
     const FlashcardIndexScreen(),
     const QuizIndexScreen(),
-    const ProfileScreen(),
+    const ProfileScreen(), // Sử dụng ProfileScreen từ import
   ];
 
   @override

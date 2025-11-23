@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-
+//D:\DemoDACN\wordmaster_dacn\lib\screens\flashcard\result_screen.dart
 class ResultScreen extends StatelessWidget {
   final String title;
   final int totalCards;
