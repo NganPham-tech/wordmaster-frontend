@@ -1,6 +1,10 @@
+// lib/screens/profile/profile_screen.dart (UPDATED)
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:wordmaster_dacn/data/models/profile_model.dart';
 import 'package:wordmaster_dacn/screens/settings/settings_screen.dart';
+import 'package:wordmaster_dacn/services/auth_service.dart';
+import '../auth/login_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -10,6 +14,7 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProviderStateMixin {
+  final _authService = AuthService.instance;
   late UserProfile _userProfile;
   late List<StudyStat> _weeklyStats;
   late List<RecentActivity> _recentActivities;
@@ -98,16 +103,429 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
 
   @override
   Widget build(BuildContext context) {
+    return Obx(() {
+      if (!_authService.isLoggedIn.value) {
+        return _buildGuestView();
+      }
+      return _buildAuthenticatedView();
+    });
+  }
+
+  // Giao diện Duolingo-style khi chưa đăng nhập
+  Widget _buildGuestView() {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Header với gradient giống Duolingo
+            Container(
+              height: 200,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    const Color(0xFF58CC02),
+                    const Color(0xFF58CC02).withOpacity(0.9),
+                  ],
+                ),
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(30),
+                  bottomRight: Radius.circular(30),
+                ),
+              ),
+              child: Stack(
+                children: [
+                  // Background pattern
+                  _buildBackgroundPattern(),
+                  
+                  Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // Owl mascot (thay thế bằng icon của bạn)
+                        Container(
+                          width: 80,
+                          height: 80,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(40),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.1),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.school,
+                            size: 40,
+                            color: Color(0xFF58CC02),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'WordMaster',
+                          style: TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          'Học tiếng Anh thông minh',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  children: [
+                    const SizedBox(height: 20),
+                    
+                    // Benefits section
+                    _buildBenefitItem(
+                      icon: Icons.trending_up,
+                      title: 'Theo dõi tiến độ học tập',
+                      subtitle: 'Xem biểu đồ và thống kê chi tiết',
+                    ),
+                    const SizedBox(height: 16),
+                    _buildBenefitItem(
+                      icon: Icons.emoji_events,
+                      title: 'Thành tích và huy hiệu',
+                      subtitle: 'Nhận phần thưởng khi hoàn thành mục tiêu',
+                    ),
+                    const SizedBox(height: 16),
+                    _buildBenefitItem(
+                      icon: Icons.sync,
+                      title: 'Đồng bộ đa thiết bị',
+                      subtitle: 'Học mọi lúc, mọi nơi',
+                    ),
+                    const SizedBox(height: 16),
+                    _buildBenefitItem(
+                      icon: Icons.leaderboard,
+                      title: 'Bảng xếp hạng',
+                      subtitle: 'So tài với bạn bè và cộng đồng',
+                    ),
+                    
+                    const SizedBox(height: 40),
+                    
+                    // CTA Buttons
+                    Column(
+                      children: [
+                        // Continue with Google
+                        SizedBox(
+                          width: double.infinity,
+                          height: 54,
+                          child: OutlinedButton(
+                            onPressed: () => _handleGoogleLogin(),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: const Color(0xFF1E293B),
+                              side: BorderSide(
+                                color: Colors.grey[300]!,
+                                width: 2,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              backgroundColor: Colors.white,
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Image.asset(
+                                  'assets/images/google.png',
+                                  width: 20,
+                                  height: 20,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return const Icon(Icons.g_mobiledata, size: 24);
+                                  },
+                                ),
+                                const SizedBox(width: 12),
+                                const Text(
+                                  'Tiếp tục với Google',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        
+                        // Continue with Facebook
+                        SizedBox(
+                          width: double.infinity,
+                          height: 54,
+                          child: OutlinedButton(
+                            onPressed: () => _handleFacebookLogin(),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: const Color(0xFF1E293B),
+                              side: BorderSide(
+                                color: Colors.grey[300]!,
+                                width: 2,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              backgroundColor: Colors.white,
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Image.asset(
+                                  'assets/images/facebook.png',
+                                  width: 20,
+                                  height: 20,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return const Icon(Icons.facebook, size: 24);
+                                  },
+                                ),
+                                const SizedBox(width: 12),
+                                const Text(
+                                  'Tiếp tục với Facebook',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        
+                        // Divider
+                        Row(
+                          children: [
+                            Expanded(child: Divider(color: Colors.grey[300])),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              child: Text(
+                                'hoặc',
+                                style: TextStyle(
+                                  color: Colors.grey[600],
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                            Expanded(child: Divider(color: Colors.grey[300])),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        
+                        // Create Account Button
+                        SizedBox(
+                          width: double.infinity,
+                          height: 54,
+                          child: ElevatedButton(
+                            onPressed: () {
+                              Get.to(() => const LoginScreen());
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF58CC02),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              elevation: 2,
+                            ),
+                            child: const Text(
+                              'Tạo tài khoản mới',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        
+                        // Login Link
+                        TextButton(
+                          onPressed: () {
+                            Get.to(() => const LoginScreen());
+                          },
+                          child: RichText(
+                            text: const TextSpan(
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey,
+                              ),
+                              children: [
+                                TextSpan(text: 'Đã có tài khoản? '),
+                                TextSpan(
+                                  text: 'Đăng nhập',
+                                  style: TextStyle(
+                                    color: Color(0xFF58CC02),
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    
+                    const SizedBox(height: 40),
+                    
+                    // Footer text
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Text(
+                        'Bằng việc tiếp tục, bạn đồng ý với Điều khoản sử dụng và Chính sách bảo mật của chúng tôi',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                          height: 1.4,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBackgroundPattern() {
+    return Positioned(
+      right: -50,
+      top: -50,
+      child: Container(
+        width: 200,
+        height: 200,
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.1),
+          shape: BoxShape.circle,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBenefitItem({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: const Color(0xFF58CC02).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              icon,
+              color: const Color(0xFF58CC02),
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF1E293B),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.grey[600],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _handleGoogleLogin() async {
+    final success = await _authService.loginWithGoogle();
+    if (success) {
+      Get.snackbar(
+        'Thành công',
+        'Đăng nhập bằng Google thành công!',
+        backgroundColor: const Color(0xFF58CC02),
+        colorText: Colors.white,
+      );
+    } else {
+      Get.snackbar(
+        'Lỗi',
+        'Đăng nhập bằng Google thất bại',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    }
+  }
+
+  Future<void> _handleFacebookLogin() async {
+    final success = await _authService.loginWithFacebook();
+    if (success) {
+      Get.snackbar(
+        'Thành công',
+        'Đăng nhập bằng Facebook thành công!',
+        backgroundColor: const Color(0xFF58CC02),
+        colorText: Colors.white,
+      );
+    } else {
+      Get.snackbar(
+        'Lỗi',
+        'Đăng nhập bằng Facebook thất bại',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    }
+  }
+
+  // Các method _buildAuthenticatedView() và các method khác giữ nguyên...
+  Widget _buildAuthenticatedView() {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       body: SafeArea(
         child: Column(
           children: [
-            // Header cố định
             _buildFixedHeader(),
-            // Tab bar
             _buildTabBar(),
-            // Tab content
             Expanded(
               child: TabBarView(
                 controller: _tabController,
@@ -134,12 +552,10 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
       ),
       child: Column(
         children: [
-          // App Bar với avatar và thông tin
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
             child: Row(
               children: [
-                // Avatar
                 Container(
                   width: 60,
                   height: 60,
@@ -149,10 +565,10 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                   ),
                   child: CircleAvatar(
                     backgroundColor: Colors.white,
-                    backgroundImage: _userProfile.avatarUrl != null
-                        ? NetworkImage(_userProfile.avatarUrl!)
+                    backgroundImage: _authService.userAvatar != null
+                        ? NetworkImage(_authService.userAvatar!)
                         : null,
-                    child: _userProfile.avatarUrl == null
+                    child: _authService.userAvatar == null
                         ? const Icon(
                             Icons.person,
                             size: 24,
@@ -162,13 +578,12 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                   ),
                 ),
                 const SizedBox(width: 12),
-                // User Info
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        _userProfile.fullName,
+                        _authService.userName,
                         style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -177,7 +592,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        _userProfile.email,
+                        _authService.userEmail,
                         style: TextStyle(
                           fontSize: 12,
                           color: Colors.white.withOpacity(0.9),
@@ -186,7 +601,6 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                     ],
                   ),
                 ),
-                // Settings Button
                 IconButton(
                   icon: const Icon(Icons.settings, color: Colors.white, size: 24),
                   onPressed: _openSettings,
@@ -194,7 +608,6 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
               ],
             ),
           ),
-          // Stats Cards
           _buildStatsCards(),
         ],
       ),
@@ -294,19 +707,14 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
-          // Learning Statistics
           _buildSectionTitle('Thống kê học tập'),
           const SizedBox(height: 16),
           _buildLearningStats(),
           const SizedBox(height: 24),
-          
-          // Weekly Progress
           _buildSectionTitle('Tiến độ 7 ngày'),
           const SizedBox(height: 16),
           _buildWeeklyChart(),
           const SizedBox(height: 24),
-          
-          // Achievement Progress
           _buildSectionTitle('Thành tích'),
           const SizedBox(height: 16),
           _buildAchievementProgress(),

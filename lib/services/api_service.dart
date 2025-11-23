@@ -19,12 +19,12 @@ class ApiService extends GetConnect {
     httpClient.defaultContentType = 'application/json';
     
     httpClient.addRequestModifier<dynamic>((request) {
-      print('🚀 REQUEST: ${request.method} ${request.url}');
+      print('REQUEST: ${request.method} ${request.url}');
       return request;
     });
     
     httpClient.addResponseModifier((request, response) {
-      print('📥 RESPONSE: ${response.statusCode} ${request.url}');
+      print('RESPONSE: ${response.statusCode} ${request.url}');
       return response;
     });
 

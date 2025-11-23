@@ -1,6 +1,6 @@
 // lib/screens/settings/settings_screen.dart
 import 'package:flutter/material.dart';
-
+import '../../services/auth_service.dart';
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
 
@@ -528,11 +528,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _performLogout() {
-    // TODO: Implement logout logic
+  void _performLogout() async {
+
+  final authService = AuthService.instance;
+  
+  await authService.logout();
+  
+  if (mounted) {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Đã đăng xuất')),
+      const SnackBar(
+        content: Text('Đã đăng xuất thành công'),
+        backgroundColor: Color(0xFF10B981),
+      ),
     );
-    // Navigate to login screen or perform logout
+    
+    // Quay về màn hình chính
+    Navigator.of(context).popUntil((route) => route.isFirst);
   }
+}
 }
