@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:get/get.dart';
 import 'quiz_topics_screen.dart';
 
 class QuizIndexScreen extends StatelessWidget {
@@ -59,12 +60,7 @@ class QuizIndexScreen extends StatelessWidget {
                         stats: 'Có sẵn nhiều chủ đề',
                         onTap: () {
                           HapticFeedback.mediumImpact();
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const QuizTopicsScreen(),
-                            ),
-                          );
+                          Get.to(() => const QuizTopicsScreen());
                         },
                       ),
                     ),

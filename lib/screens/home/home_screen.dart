@@ -10,7 +10,8 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
+class _HomeScreenState extends State<HomeScreen>
+    with SingleTickerProviderStateMixin {
   late final User _currentUser;
   late final DailyGoal _dailyGoal;
   final List<QuickAction> _quickActions = [];
@@ -40,10 +41,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       firstName: 'Ngân', 
       lastName: 'Ái',
       email: 'ngan@example.com',
-      currentStreak: 7,
-      totalPoints: 1250,
-      level: 12,
-      avatarUrl: null,
+      password: '', // Password không được lưu trong UI
+      createdAt: DateTime.now(),
+      avatar: 'default-avatar.png',
+      lastLogin: DateTime.now(),
     );
 
     _dailyGoal = DailyGoal(
@@ -139,10 +140,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         child: CustomScrollView(
           slivers: [
             // Header
-            SliverToBoxAdapter(
-              child: _buildHeader(),
-            ),
-            
+            SliverToBoxAdapter(child: _buildHeader()),
+
             // Hero Card
             SliverToBoxAdapter(
               child: Padding(
@@ -150,7 +149,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 child: _buildHeroCard(),
               ),
             ),
-            
+
             // Quick Actions
             SliverToBoxAdapter(
               child: Padding(
@@ -158,7 +157,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 child: _buildQuickActions(),
               ),
             ),
-            
+
             // Stats
             SliverToBoxAdapter(
               child: Padding(
@@ -166,7 +165,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 child: _buildQuickStats(),
               ),
             ),
-            
+
             // Recommended Decks
             SliverToBoxAdapter(
               child: Padding(
@@ -174,7 +173,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 child: _buildRecommendedDecks(),
               ),
             ),
-            
+
             // Continue Learning
             if (_recentDecks.isNotEmpty)
               SliverToBoxAdapter(
@@ -183,11 +182,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   child: _buildContinueLearning(),
                 ),
               ),
-            
+
             // Bottom spacing
-            const SliverToBoxAdapter(
-              child: SizedBox(height: 32),
-            ),
+            const SliverToBoxAdapter(child: SizedBox(height: 32)),
           ],
         ),
       ),
@@ -204,7 +201,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Hi, ${_currentUser.firstName}! 👋',
+                  'Hi, ${_currentUser.fullName}! 👋',
                   style: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
@@ -214,10 +211,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 const SizedBox(height: 4),
                 Text(
                   'Sẵn sàng học hôm nay chưa?',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[600],
-                  ),
+                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                 ),
               ],
             ),
@@ -240,10 +234,14 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.local_fire_department, color: Colors.white, size: 18),
+                const Icon(
+                  Icons.local_fire_department,
+                  color: Colors.white,
+                  size: 18,
+                ),
                 const SizedBox(width: 4),
                 Text(
-                  '${_currentUser.currentStreak}',
+                  '7', // TODO: Add streak to user model
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
@@ -260,7 +258,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   Widget _buildHeroCard() {
     final progress = _dailyGoal.progressPercentage;
-    
+
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -323,7 +321,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                         value: progress,
                         strokeWidth: 5,
                         backgroundColor: Colors.white.withOpacity(0.3),
-                        valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+                        valueColor: const AlwaysStoppedAnimation<Color>(
+                          Colors.white,
+                        ),
                       ),
                     ),
                     Text(
@@ -365,10 +365,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               ),
               child: const Text(
                 'Bắt đầu học',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
             ),
           ),
@@ -472,11 +469,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                       color: action.color.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Icon(
-                      action.icon,
-                      color: action.color,
-                      size: 24,
-                    ),
+                    child: Icon(action.icon, color: action.color, size: 24),
                   ),
                   if (action.pendingItems > 0)
                     Positioned(
@@ -527,9 +520,24 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   Widget _buildQuickStats() {
     final stats = [
-      {'value': '234', 'label': 'Từ vựng', 'icon': Icons.style_outlined, 'color': const Color(0xFF6366F1)},
-      {'value': '12', 'label': 'Ngữ pháp', 'icon': Icons.school_outlined, 'color': const Color(0xFF8B5CF6)},
-      {'value': '${_currentUser.currentStreak}', 'label': 'Chuỗi ngày', 'icon': Icons.local_fire_department, 'color': const Color(0xFFEF4444)},
+      {
+        'value': '234',
+        'label': 'Từ vựng',
+        'icon': Icons.style_outlined,
+        'color': const Color(0xFF6366F1),
+      },
+      {
+        'value': '12',
+        'label': 'Ngữ pháp',
+        'icon': Icons.school_outlined,
+        'color': const Color(0xFF8B5CF6),
+      },
+      {
+        'value': '7', // TODO: Add streak to user model
+        'label': 'Chuỗi ngày',
+        'icon': Icons.local_fire_department,
+        'color': const Color(0xFFEF4444),
+      },
     ];
 
     return Row(
@@ -538,9 +546,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         final stat = entry.value;
         return Expanded(
           child: Padding(
-            padding: EdgeInsets.only(
-              right: index < stats.length - 1 ? 12 : 0,
-            ),
+            padding: EdgeInsets.only(right: index < stats.length - 1 ? 12 : 0),
             child: Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -567,10 +573,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   const SizedBox(height: 4),
                   Text(
                     stat['label'] as String,
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: Colors.grey[600],
-                    ),
+                    style: TextStyle(fontSize: 11, color: Colors.grey[600]),
                     textAlign: TextAlign.center,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -662,7 +665,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                     const Color(0xFF8B5CF6).withOpacity(0.8),
                   ],
                 ),
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(16),
+                ),
               ),
               child: Center(
                 child: Icon(
@@ -702,9 +707,14 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
-                          color: _getDifficultyColor(deck.difficulty).withOpacity(0.1),
+                          color: _getDifficultyColor(
+                            deck.difficulty,
+                          ).withOpacity(0.1),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
@@ -763,10 +773,12 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           ),
         ),
         const SizedBox(height: 16),
-        ..._recentDecks.map((deck) => Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: _buildRecentDeckItem(deck),
-        )),
+        ..._recentDecks.map(
+          (deck) => Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: _buildRecentDeckItem(deck),
+          ),
+        ),
       ],
     );
   }
@@ -821,16 +833,15 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                     value: deck.progress,
                     minHeight: 6,
                     backgroundColor: Colors.grey[200],
-                    valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF6366F1)),
+                    valueColor: const AlwaysStoppedAnimation<Color>(
+                      Color(0xFF6366F1),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   '${(deck.progress * 100).toInt()}% hoàn thành',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                  ),
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                 ),
               ],
             ),

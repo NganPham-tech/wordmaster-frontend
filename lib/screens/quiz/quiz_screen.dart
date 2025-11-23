@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../../providers/quiz_provider.dart';
+import 'package:get/get.dart';
+import '../../controllers/quiz_controller.dart';
 import '../../data/models/quiz_topic_model.dart';
 import 'quiz_result_screen.dart';
 
@@ -21,7 +21,10 @@ class _QuizScreenState extends State<QuizScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<QuizProvider>(context, listen: false).startQuiz(widget.topic);
+      final ctrl = Get.isRegistered<QuizController>()
+          ? Get.find<QuizController>()
+          : Get.put(QuizController());
+      ctrl.startQuiz(widget.topic);
     });
   }
 
@@ -47,157 +50,225 @@ class _QuizScreenState extends State<QuizScreen> {
           ),
         ],
       ),
-      body: Consumer<QuizProvider>(
-        builder: (context, quizProvider, child) {
-          if (quizProvider.isLoading) {
-            return const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: 16),
-                  Text('Loading quiz...'),
+      body: Obx(() {
+        final ctrl = Get.find<QuizController>();
+        if (ctrl.isLoading.value) {
+          return const Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('Loading quiz...'),
+              ],
+            ),
+          );
+        }
+
+        if (ctrl.error.value != null) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                const SizedBox(height: 16),
+                Text(
+                  'Error loading quiz',
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
+                const SizedBox(height: 8),
+                Text(ctrl.error.value!),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () => Get.back(),
+                  child: const Text('Go Back'),
+                ),
+              ],
+            ),
+          );
+        }
+
+        final currentQuestion = ctrl.currentQuestion;
+        if (currentQuestion == null) {
+          return const Center(child: Text('No questions available'));
+        }
+
+        final progress =
+            (ctrl.currentQuestionIndex.value + 1) /
+            ctrl.currentQuestions.length;
+
+        return Column(
+          children: [
+            // Progress bar
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: const BorderRadius.vertical(
+                  bottom: Radius.circular(20),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF6366F1).withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
                 ],
               ),
-            );
-          }
-
-          if (quizProvider.error != null) {
-            return Center(
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.error_outline, size: 64, color: Colors.red),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Error loading quiz',
-                    style: Theme.of(context).textTheme.headlineSmall,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Question ${ctrl.currentQuestionIndex.value + 1} of ${ctrl.currentQuestions.length}',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                      Text(
+                        '${(progress * 100).round()}%',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 8),
-                  Text(quizProvider.error!),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('Go Back'),
+                  LinearProgressIndicator(
+                    value: progress,
+                    backgroundColor: Colors.white.withOpacity(0.3),
+                    valueColor: const AlwaysStoppedAnimation<Color>(
+                      Colors.white,
+                    ),
+                    borderRadius: BorderRadius.circular(10),
+                    minHeight: 6,
                   ),
                 ],
               ),
-            );
-          }
+            ),
 
-          final currentQuestion = quizProvider.currentQuestion;
-          if (currentQuestion == null) {
-            return const Center(child: Text('No questions available'));
-          }
-
-          final progress =
-              (quizProvider.currentQuestionIndex + 1) /
-              quizProvider.currentQuestions.length;
-
-          return Column(
-            children: [
-              // Progress bar
-              Container(
+            // Question content
+            Expanded(
+              child: Padding(
                 padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: const BorderRadius.vertical(
-                    bottom: Radius.circular(20),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF6366F1).withOpacity(0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Question ${quizProvider.currentQuestionIndex + 1} of ${quizProvider.currentQuestions.length}',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
+                    // Question
+                    Card(
+                      elevation: 2,
+                      child: Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: _getDifficultyColor(
+                                      currentQuestion.difficulty,
+                                    ),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    currentQuestion.difficulty,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              currentQuestion.question,
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                                height: 1.4,
+                              ),
+                            ),
+                          ],
                         ),
-                        Text(
-                          '${(progress * 100).round()}%',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    LinearProgressIndicator(
-                      value: progress,
-                      backgroundColor: Colors.white.withOpacity(0.3),
-                      valueColor: const AlwaysStoppedAnimation<Color>(
-                        Colors.white,
                       ),
-                      borderRadius: BorderRadius.circular(10),
-                      minHeight: 6,
                     ),
-                  ],
-                ),
-              ),
 
-              // Question content
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Question
+                    const SizedBox(height: 20),
+
+                    // Answer options
+                    Expanded(
+                      child: ListView.builder(
+                        itemCount: currentQuestion.options.length,
+                        itemBuilder: (context, index) {
+                          final isSelected = _selectedAnswer == index;
+                          final isCorrect =
+                              index == currentQuestion.correctAnswerIndex;
+
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: AnswerOption(
+                              text: currentQuestion.options[index],
+                              isSelected: isSelected,
+                              isCorrect: _showExplanation ? isCorrect : null,
+                              onTap: _showExplanation
+                                  ? null
+                                  : () => _selectAnswer(index),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+
+                    // Explanation (if shown)
+                    if (_showExplanation) ...[
+                      const SizedBox(height: 16),
                       Card(
-                        elevation: 2,
+                        color: Colors.blue[50],
                         child: Padding(
-                          padding: const EdgeInsets.all(20),
+                          padding: const EdgeInsets.all(16),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Row(
                                 children: [
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 4,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: _getDifficultyColor(
-                                        currentQuestion.difficulty,
-                                      ),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Text(
-                                      currentQuestion.difficulty,
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600,
-                                      ),
+                                  Icon(
+                                    Icons.lightbulb_outline,
+                                    color: Colors.blue[700],
+                                    size: 20,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Explanation',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: const Color(0xFF6366F1),
                                     ),
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 16),
+                              const SizedBox(height: 8),
                               Text(
-                                currentQuestion.question,
+                                currentQuestion.explanation,
                                 style: const TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w600,
+                                  fontSize: 14,
+                                  color: Color(0xFF475569),
                                   height: 1.4,
                                 ),
                               ),
@@ -205,124 +276,55 @@ class _QuizScreenState extends State<QuizScreen> {
                           ),
                         ),
                       ),
-
-                      const SizedBox(height: 20),
-
-                      // Answer options
-                      Expanded(
-                        child: ListView.builder(
-                          itemCount: currentQuestion.options.length,
-                          itemBuilder: (context, index) {
-                            final isSelected = _selectedAnswer == index;
-                            final isCorrect =
-                                index == currentQuestion.correctAnswerIndex;
-
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: 12),
-                              child: AnswerOption(
-                                text: currentQuestion.options[index],
-                                isSelected: isSelected,
-                                isCorrect: _showExplanation ? isCorrect : null,
-                                onTap: _showExplanation
-                                    ? null
-                                    : () => _selectAnswer(index),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-
-                      // Explanation (if shown)
-                      if (_showExplanation) ...[
-                        const SizedBox(height: 16),
-                        Card(
-                          color: Colors.blue[50],
-                          child: Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Icon(
-                                      Icons.lightbulb_outline,
-                                      color: Colors.blue[700],
-                                      size: 20,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      'Explanation',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                        color: const Color(0xFF6366F1),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  currentQuestion.explanation,
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    color: Color(0xFF475569),
-                                    height: 1.4,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
                     ],
-                  ),
+                  ],
                 ),
               ),
+            ),
 
-              // Navigation buttons
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.3),
-                      spreadRadius: 1,
-                      blurRadius: 5,
-                      offset: const Offset(0, -3),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    if (quizProvider.currentQuestionIndex > 0)
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: _showExplanation
-                              ? null
-                              : () {
-                                  quizProvider.previousQuestion();
-                                  _resetAnswerState();
-                                },
-                          child: const Text('Previous'),
-                        ),
-                      ),
-                    if (quizProvider.currentQuestionIndex > 0)
-                      const SizedBox(width: 16),
-                    Expanded(
-                      flex: 2,
-                      child: ElevatedButton(
-                        onPressed: _selectedAnswer == null ? null : _handleNext,
-                        child: Text(_getNextButtonText(quizProvider)),
-                      ),
-                    ),
-                  ],
-                ),
+            // Navigation buttons
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.3),
+                    spreadRadius: 1,
+                    blurRadius: 5,
+                    offset: const Offset(0, -3),
+                  ),
+                ],
               ),
-            ],
-          );
-        },
-      ),
+              child: Row(
+                children: [
+                  if (ctrl.currentQuestionIndex.value > 0)
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: _showExplanation
+                            ? null
+                            : () {
+                                ctrl.previousQuestion();
+                                _resetAnswerState();
+                              },
+                        child: const Text('Previous'),
+                      ),
+                    ),
+                  if (ctrl.currentQuestionIndex.value > 0)
+                    const SizedBox(width: 16),
+                  Expanded(
+                    flex: 2,
+                    child: ElevatedButton(
+                      onPressed: _selectedAnswer == null ? null : _handleNext,
+                      child: Text(_getNextButtonText(ctrl)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        );
+      }),
     );
   }
 
@@ -330,7 +332,8 @@ class _QuizScreenState extends State<QuizScreen> {
     setState(() {
       _selectedAnswer = index;
     });
-    Provider.of<QuizProvider>(context, listen: false).answerQuestion(index);
+    final ctrl = Get.find<QuizController>();
+    ctrl.answerQuestion(index);
   }
 
   void _handleNext() {
@@ -339,8 +342,8 @@ class _QuizScreenState extends State<QuizScreen> {
         _showExplanation = true;
       });
     } else {
-      final quizProvider = Provider.of<QuizProvider>(context, listen: false);
-      final hasNext = quizProvider.nextQuestion();
+      final ctrl = Get.find<QuizController>();
+      final hasNext = ctrl.nextQuestion();
 
       if (hasNext) {
         _resetAnswerState();
@@ -358,22 +361,19 @@ class _QuizScreenState extends State<QuizScreen> {
   }
 
   void _finishQuiz() {
-    final quizProvider = Provider.of<QuizProvider>(context, listen: false);
-    final result = quizProvider.getQuizResult();
-
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (context) => QuizResultScreen(result: result)),
-    );
+    final ctrl = Get.find<QuizController>();
+    final result = ctrl.getQuizResult();
+    Get.off(() => QuizResultScreen(result: result));
   }
 
-  String _getNextButtonText(QuizProvider quizProvider) {
+  String _getNextButtonText(QuizController quizController) {
     if (!_showExplanation) {
       return 'Submit Answer';
     }
 
     final isLast =
-        quizProvider.currentQuestionIndex ==
-        quizProvider.currentQuestions.length - 1;
+        quizController.currentQuestionIndex.value ==
+        quizController.currentQuestions.length - 1;
     return isLast ? 'Finish Quiz' : 'Next Question';
   }
 
@@ -399,15 +399,13 @@ class _QuizScreenState extends State<QuizScreen> {
           'Are you sure you want to quit? Your progress will be lost.',
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
+          TextButton(onPressed: () => Get.back(), child: const Text('Cancel')),
           TextButton(
             onPressed: () {
-              Navigator.of(context).pop(); // Close dialog
-              Navigator.of(context).pop(); // Close quiz
-              Provider.of<QuizProvider>(context, listen: false).endQuiz();
+              Get.back(); // Close dialog
+              Get.back(); // Close quiz
+              final ctrl = Get.find<QuizController>();
+              ctrl.endQuiz();
             },
             child: const Text('Quit'),
           ),
