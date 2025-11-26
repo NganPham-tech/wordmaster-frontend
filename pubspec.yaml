@@ -39,6 +39,9 @@ dependencies:
   # Text to speech
   flutter_tts: ^4.2.3
   
+  # Audio player
+  audioplayers: ^6.1.0
+  
   # Charts
   fl_chart: ^0.69.2
   shimmer: ^3.0.0

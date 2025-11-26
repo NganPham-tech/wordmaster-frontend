@@ -1,46 +1,32 @@
-// lib/screens/dictation/dictation_player_screen.dart
-//D:\DemoDACN\wordmaster_dacn\lib\screens\dictation\dictation_player_screen.dart
-import 'package:flutter/material.dart';
+// D:\DemoDACN\wordmaster_dacn\lib\screens\dictation\dictation_segment_screen.dart
 import 'dart:async';
+import 'package:flutter/material.dart';
 import '/data/models/dictation_model.dart';
-import 'widgets/audio_player_bar.dart' hide ResultDialog;
-import 'widgets/result_dialog.dart';
+import 'widgets/real_audio_player.dart';
 
-class DictationPlayerScreen extends StatefulWidget {
+class DictationSegmentScreen extends StatefulWidget {
   final DictationContent content;
 
-  const DictationPlayerScreen({
+  const DictationSegmentScreen({
     super.key,
     required this.content,
   });
 
   @override
-  State<DictationPlayerScreen> createState() => _DictationPlayerScreenState();
+  State<DictationSegmentScreen> createState() => _DictationSegmentScreenState();
 }
 
-class _DictationPlayerScreenState extends State<DictationPlayerScreen> 
+class _DictationSegmentScreenState extends State<DictationSegmentScreen> 
     with SingleTickerProviderStateMixin {
-  final TextEditingController _inputController = TextEditingController();
+  int _currentSegmentIndex = 0;
+  final List<TextEditingController> _segmentControllers = [];
+  final List<bool> _segmentChecked = [];
+  final List<String?> _segmentFeedback = [];
+  bool _isPlaying = false;
+  double _currentPosition = 0;
+  Timer? _playbackTimer;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
-  
-  List<DictationSentence> _sentences = [];
-  int _currentSentenceIndex = 0;
-  bool _isPlaying = false;
-  bool _showHint = false;
-  bool _hasChecked = false;
-  String? _feedback;
-  
-  // Results tracking
-  int _correctAnswers = 0;
-  int _totalWords = 0;
-  int _correctWords = 0;
-  DateTime _startTime = DateTime.now();
-  
-  // Audio simulation
-  Timer? _playbackTimer;
-  double _currentPosition = 0;
-  double _totalDuration = 0;
 
   @override
   void initState() {
@@ -54,39 +40,25 @@ class _DictationPlayerScreenState extends State<DictationPlayerScreen>
       curve: Curves.easeInOut,
     );
     _animationController.forward();
-    _initializeSentences();
-    _totalDuration = widget.content.duration.toDouble();
+    
+    // Initialize controllers and state for each segment
+    if (widget.content.segments != null) {
+      for (int i = 0; i < widget.content.segments!.length; i++) {
+        _segmentControllers.add(TextEditingController());
+        _segmentChecked.add(false);
+        _segmentFeedback.add(null);
+      }
+    }
   }
 
   @override
   void dispose() {
-    _inputController.dispose();
-    _animationController.dispose();
+    for (var controller in _segmentControllers) {
+      controller.dispose();
+    }
     _playbackTimer?.cancel();
+    _animationController.dispose();
     super.dispose();
-  }
-
-  void _initializeSentences() {
-    // Simulate splitting transcript into sentences
-    final transcript = widget.content.transcript;
-    final sentenceTexts = transcript.split('. ')
-        .where((s) => s.trim().isNotEmpty)
-        .map((s) => s.endsWith('.') ? s : '$s.')
-        .toList();
-    
-    int startTime = 0;
-    final avgTimePerSentence = widget.content.duration ~/ sentenceTexts.length;
-    
-    _sentences = sentenceTexts.asMap().entries.map((entry) {
-      final sentence = DictationSentence(
-        index: entry.key,
-        text: entry.value,
-        startTime: startTime,
-        endTime: startTime + avgTimePerSentence,
-      );
-      startTime += avgTimePerSentence;
-      return sentence;
-    }).toList();
   }
 
   void _togglePlayPause() {
@@ -102,26 +74,17 @@ class _DictationPlayerScreenState extends State<DictationPlayerScreen>
   }
 
   void _startPlayback() {
+    final currentSegment = widget.content.segments![_currentSegmentIndex];
+    _currentPosition = currentSegment.startTime.toDouble();
+    
     _playbackTimer?.cancel();
     _playbackTimer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
       setState(() {
         _currentPosition += 0.1;
-        if (_currentPosition >= _totalDuration) {
-          _currentPosition = _totalDuration;
+        if (_currentPosition >= currentSegment.endTime) {
+          _currentPosition = currentSegment.endTime;
           _isPlaying = false;
           timer.cancel();
-        }
-        
-        // Auto-advance sentence based on position
-        for (var sentence in _sentences) {
-          if (_currentPosition >= sentence.startTime && 
-              _currentPosition < sentence.endTime) {
-            if (_currentSentenceIndex != sentence.index) {
-              _currentSentenceIndex = sentence.index;
-              _resetCurrentSentence();
-            }
-            break;
-          }
         }
       });
     });
@@ -131,31 +94,9 @@ class _DictationPlayerScreenState extends State<DictationPlayerScreen>
     _playbackTimer?.cancel();
   }
 
-  void _seekTo(double position) {
-    setState(() {
-      _currentPosition = position;
-      // Find corresponding sentence
-      for (var sentence in _sentences) {
-        if (position >= sentence.startTime && position < sentence.endTime) {
-          if (_currentSentenceIndex != sentence.index) {
-            _currentSentenceIndex = sentence.index;
-            _resetCurrentSentence();
-          }
-          break;
-        }
-      }
-    });
-  }
-
-  void _resetCurrentSentence() {
-    _inputController.clear();
-    _hasChecked = false;
-    _showHint = false;
-    _feedback = null;
-  }
-
-  void _checkAnswer() {
-    if (_inputController.text.trim().isEmpty) {
+  void _checkAnswer(int segmentIndex) {
+    final controller = _segmentControllers[segmentIndex];
+    if (controller.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please type what you hear'),
@@ -165,9 +106,9 @@ class _DictationPlayerScreenState extends State<DictationPlayerScreen>
       return;
     }
     
-    final currentSentence = _sentences[_currentSentenceIndex];
-    final correct = currentSentence.text.toLowerCase().trim();
-    final userInput = _inputController.text.toLowerCase().trim();
+    final segment = widget.content.segments![segmentIndex];
+    final correct = segment.text.toLowerCase().trim();
+    final userInput = controller.text.toLowerCase().trim();
     
     // Calculate accuracy
     final correctWords = correct.split(' ');
@@ -183,31 +124,27 @@ class _DictationPlayerScreenState extends State<DictationPlayerScreen>
     final accuracy = (matchedWords / correctWords.length) * 100;
     
     setState(() {
-      _hasChecked = true;
-      _totalWords += correctWords.length;
-      _correctWords += matchedWords;
+      _segmentChecked[segmentIndex] = true;
       
       if (accuracy >= 80) {
-        _feedback = 'Great job! ${accuracy.toStringAsFixed(0)}% accurate';
-        _correctAnswers++;
+        _segmentFeedback[segmentIndex] = 'Great job! ${accuracy.toStringAsFixed(0)}% accurate';
       } else if (accuracy >= 60) {
-        _feedback = 'Good try! ${accuracy.toStringAsFixed(0)}% accurate';
+        _segmentFeedback[segmentIndex] = 'Good try! ${accuracy.toStringAsFixed(0)}% accurate';
       } else {
-        _feedback = 'Keep practicing! ${accuracy.toStringAsFixed(0)}% accurate';
+        _segmentFeedback[segmentIndex] = 'Keep practicing! ${accuracy.toStringAsFixed(0)}% accurate';
       }
     });
     
-    // Vibrate effect
     _animationController.reset();
     _animationController.forward();
   }
 
-  void _nextSentence() {
-    if (_currentSentenceIndex < _sentences.length - 1) {
+  void _nextSegment() {
+    if (_currentSegmentIndex < widget.content.segments!.length - 1) {
       setState(() {
-        _currentSentenceIndex++;
-        _resetCurrentSentence();
-        _currentPosition = _sentences[_currentSentenceIndex].startTime.toDouble();
+        _currentSegmentIndex++;
+        _currentPosition = widget.content.segments![_currentSegmentIndex].startTime.toDouble();
+        _isPlaying = false;
       });
       _animationController.reset();
       _animationController.forward();
@@ -216,12 +153,12 @@ class _DictationPlayerScreenState extends State<DictationPlayerScreen>
     }
   }
 
-  void _previousSentence() {
-    if (_currentSentenceIndex > 0) {
+  void _previousSegment() {
+    if (_currentSegmentIndex > 0) {
       setState(() {
-        _currentSentenceIndex--;
-        _resetCurrentSentence();
-        _currentPosition = _sentences[_currentSentenceIndex].startTime.toDouble();
+        _currentSegmentIndex--;
+        _currentPosition = widget.content.segments![_currentSegmentIndex].startTime.toDouble();
+        _isPlaying = false;
       });
       _animationController.reset();
       _animationController.forward();
@@ -229,71 +166,90 @@ class _DictationPlayerScreenState extends State<DictationPlayerScreen>
   }
 
   void _showCompletionDialog() {
-    final timeSpent = DateTime.now().difference(_startTime).inSeconds;
-    final accuracy = (_correctWords / _totalWords * 100).toStringAsFixed(1);
+    final completedSegments = _segmentChecked.where((checked) => checked).length;
+    final totalSegments = widget.content.segments!.length;
     
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => ResultDialog(
-        title: 'Dictation Complete! 🎉',
-        accuracy: double.parse(accuracy),
-        correctAnswers: _correctAnswers,
-        totalQuestions: _sentences.length,
-        timeSpent: timeSpent,
-        onRetry: () {
-          Navigator.pop(context);
-          setState(() {
-            _currentSentenceIndex = 0;
-            _correctAnswers = 0;
-            _totalWords = 0;
-            _correctWords = 0;
-            _startTime = DateTime.now();
-            _currentPosition = 0;
-            _resetCurrentSentence();
-          });
-        },
-        onClose: () {
-          Navigator.pop(context);
-          Navigator.pop(context);
-        },
+      builder: (context) => AlertDialog(
+        title: const Text('Segment Practice Complete! 🎉'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('You completed $completedSegments out of $totalSegments segments.'),
+            const SizedBox(height: 16),
+            const Text(
+              'Great job practicing sentence by sentence! This helps build listening accuracy.',
+              style: TextStyle(fontSize: 14, color: Colors.grey),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              // Reset to first segment
+              setState(() {
+                _currentSegmentIndex = 0;
+                _currentPosition = widget.content.segments![0].startTime.toDouble();
+                _isPlaying = false;
+              });
+            },
+            child: const Text('Practice Again'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.pop(context);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF6366F1),
+            ),
+            child: const Text('Finish', style: TextStyle(color: Colors.white)),
+          ),
+        ],
       ),
     );
   }
 
-  void _toggleHint() {
+  void _retrySegment(int segmentIndex) {
     setState(() {
-      _showHint = !_showHint;
+      _segmentChecked[segmentIndex] = false;
+      _segmentFeedback[segmentIndex] = null;
+      _segmentControllers[segmentIndex].clear();
     });
-  }
-
-  String _getHintText() {
-    final sentence = _sentences[_currentSentenceIndex].text;
-    final words = sentence.split(' ');
-    if (words.length <= 3) {
-      return '${words.first} ... ${words.last}';
-    }
-    return '${words.first} ${words[1]} ... ${words[words.length - 2]} ${words.last}';
   }
 
   @override
   Widget build(BuildContext context) {
-    final currentSentence = _sentences.isNotEmpty 
-        ? _sentences[_currentSentenceIndex] 
-        : null;
+    final segments = widget.content.segments;
+    if (segments == null || segments.isEmpty) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Sentence by Sentence'),
+        ),
+        body: const Center(
+          child: Text('No segments available for this content'),
+        ),
+      );
+    }
+
+    final currentSegment = segments[_currentSegmentIndex];
+    final isChecked = _segmentChecked[_currentSegmentIndex];
+    final feedback = _segmentFeedback[_currentSegmentIndex];
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         title: Text(
-          widget.content.title,
+          'Sentence ${_currentSegmentIndex + 1} of ${segments.length}',
           style: const TextStyle(
             fontSize: 18,
             color: Color(0xFF1E293B),
             fontWeight: FontWeight.w600,
           ),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
         ),
         backgroundColor: Colors.white,
         elevation: 0,
@@ -312,7 +268,7 @@ class _DictationPlayerScreenState extends State<DictationPlayerScreen>
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
-              '${_currentSentenceIndex + 1}/${_sentences.length}',
+              '${_currentSegmentIndex + 1}/${segments.length}',
               style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
@@ -323,19 +279,97 @@ class _DictationPlayerScreenState extends State<DictationPlayerScreen>
       ),
       body: Column(
         children: [
-          // Audio Player Bar
-          AudioPlayerBar(
-            isPlaying: _isPlaying,
-            currentPosition: _currentPosition,
-            totalDuration: _totalDuration,
-            onPlayPause: _togglePlayPause,
-            onSeek: _seekTo,
-            onNext: _currentSentenceIndex < _sentences.length - 1 
-                ? _nextSentence 
-                : null,
-            onPrevious: _currentSentenceIndex > 0 
-                ? _previousSentence 
-                : null,
+          // Segment Player Bar
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                // Time Display
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '${currentSegment.startTime.toStringAsFixed(1)}s',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey,
+                      ),
+                    ),
+                    Text(
+                      '${currentSegment.endTime.toStringAsFixed(1)}s',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                // Progress Bar
+                Container(
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[200],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(2),
+                    child: LinearProgressIndicator(
+                      value: (_currentPosition - currentSegment.startTime) / 
+                            (currentSegment.endTime - currentSegment.startTime),
+                      backgroundColor: Colors.transparent,
+                      valueColor: const AlwaysStoppedAnimation<Color>(
+                        Color(0xFF6366F1),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                // Player Controls
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.skip_previous),
+                      onPressed: _currentSegmentIndex > 0 ? _previousSegment : null,
+                      color: const Color(0xFF6366F1),
+                    ),
+                    Container(
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                        ),
+                        shape: BoxShape.circle,
+                      ),
+                      child: IconButton(
+                        icon: Icon(
+                          _isPlaying ? Icons.pause : Icons.play_arrow,
+                          color: Colors.white,
+                        ),
+                        onPressed: _togglePlayPause,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.skip_next),
+                      onPressed: _currentSegmentIndex < segments.length - 1 
+                          ? _nextSegment 
+                          : null,
+                      color: const Color(0xFF6366F1),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
           
           // Main Content Area
@@ -356,7 +390,7 @@ class _DictationPlayerScreenState extends State<DictationPlayerScreen>
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(2),
                         child: LinearProgressIndicator(
-                          value: (_currentSentenceIndex + 1) / _sentences.length,
+                          value: (_currentSegmentIndex + 1) / segments.length,
                           backgroundColor: Colors.transparent,
                           valueColor: const AlwaysStoppedAnimation<Color>(
                             Color(0xFF6366F1),
@@ -384,13 +418,13 @@ class _DictationPlayerScreenState extends State<DictationPlayerScreen>
                       child: Column(
                         children: [
                           Icon(
-                            Icons.headphones,
+                            Icons.format_list_numbered,
                             size: 48,
                             color: const Color(0xFF6366F1).withOpacity(0.8),
                           ),
                           const SizedBox(height: 12),
                           const Text(
-                            'Listen carefully and type what you hear',
+                            'Listen to this sentence and type what you hear',
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
@@ -400,7 +434,7 @@ class _DictationPlayerScreenState extends State<DictationPlayerScreen>
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            'Sentence ${_currentSentenceIndex + 1} of ${_sentences.length}',
+                            'Focus on accuracy for each individual sentence',
                             style: TextStyle(
                               fontSize: 14,
                               color: Colors.grey[600],
@@ -417,12 +451,12 @@ class _DictationPlayerScreenState extends State<DictationPlayerScreen>
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: _hasChecked 
-                              ? (_feedback?.contains('Great') ?? false
+                          color: isChecked 
+                              ? (feedback?.contains('Great') ?? false
                                   ? const Color(0xFF10B981)
                                   : const Color(0xFFF59E0B))
                               : Colors.grey[300]!,
-                          width: _hasChecked ? 2 : 1,
+                          width: isChecked ? 2 : 1,
                         ),
                         boxShadow: [
                           BoxShadow(
@@ -433,15 +467,16 @@ class _DictationPlayerScreenState extends State<DictationPlayerScreen>
                         ],
                       ),
                       child: TextField(
-                        controller: _inputController,
-                        maxLines: 4,
-                        enabled: !_hasChecked,
+                        controller: _segmentControllers[_currentSegmentIndex],
+                        minLines: 3,
+                        maxLines: 5,
+                        enabled: !isChecked,
                         style: const TextStyle(
                           fontSize: 16,
                           height: 1.5,
                         ),
                         decoration: InputDecoration(
-                          hintText: 'Type what you hear...',
+                          hintText: 'Type this sentence...',
                           hintStyle: TextStyle(
                             color: Colors.grey[400],
                             fontSize: 16,
@@ -452,52 +487,18 @@ class _DictationPlayerScreenState extends State<DictationPlayerScreen>
                       ),
                     ),
                     
-                    // Hint Section
-                    if (_showHint && !_hasChecked) ...[
-                      const SizedBox(height: 16),
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFEF3C7),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: const Color(0xFFFBBF24),
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(
-                              Icons.lightbulb_outline,
-                              color: Color(0xFFF59E0B),
-                              size: 20,
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                'Hint: ${_getHintText()}',
-                                style: const TextStyle(
-                                  color: Color(0xFF92400E),
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                    
                     // Feedback Section
-                    if (_hasChecked && _feedback != null) ...[
+                    if (isChecked && feedback != null) ...[
                       const SizedBox(height: 16),
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: _feedback!.contains('Great')
+                          color: feedback.contains('Great')
                               ? const Color(0xFFD1FAE5)
                               : const Color(0xFFFEF3C7),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: _feedback!.contains('Great')
+                            color: feedback.contains('Great')
                                 ? const Color(0xFF10B981)
                                 : const Color(0xFFF59E0B),
                           ),
@@ -507,60 +508,60 @@ class _DictationPlayerScreenState extends State<DictationPlayerScreen>
                             Row(
                               children: [
                                 Icon(
-                                  _feedback!.contains('Great')
+                                  feedback.contains('Great')
                                       ? Icons.check_circle
                                       : Icons.info_outline,
-                                  color: _feedback!.contains('Great')
+                                  color: feedback.contains('Great')
                                       ? const Color(0xFF10B981)
                                       : const Color(0xFFF59E0B),
                                   size: 24,
                                 ),
                                 const SizedBox(width: 12),
-                                Text(
-                                  _feedback!,
-                                  style: TextStyle(
-                                    color: _feedback!.contains('Great')
-                                        ? const Color(0xFF065F46)
-                                        : const Color(0xFF92400E),
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
+                                Expanded(
+                                  child: Text(
+                                    feedback,
+                                    style: TextStyle(
+                                      color: feedback.contains('Great')
+                                          ? const Color(0xFF065F46)
+                                          : const Color(0xFF92400E),
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
                                 ),
                               ],
                             ),
-                            if (currentSentence != null) ...[
-                              const SizedBox(height: 12),
-                              Container(
-                                width: double.infinity,
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Text(
-                                      'Correct answer:',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.grey,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      currentSentence.text,
-                                      style: const TextStyle(
-                                        fontSize: 14,
-                                        color: Color(0xFF1E293B),
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                            const SizedBox(height: 12),
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(8),
                               ),
-                            ],
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Correct sentence:',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    currentSegment.text,
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      color: Color(0xFF1E293B),
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -586,45 +587,10 @@ class _DictationPlayerScreenState extends State<DictationPlayerScreen>
             ),
             child: Row(
               children: [
-                if (!_hasChecked) ...[
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: _toggleHint,
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        side: const BorderSide(
-                          color: Color(0xFF6366F1),
-                          width: 2,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            _showHint ? Icons.visibility_off : Icons.lightbulb_outline,
-                            color: const Color(0xFF6366F1),
-                            size: 20,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            _showHint ? 'Hide Hint' : 'Show Hint',
-                            style: const TextStyle(
-                              color: Color(0xFF6366F1),
-                              fontWeight: FontWeight.w600,
-                              fontSize: 16,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
+                if (!isChecked) ...[
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: _checkAnswer,
+                      onPressed: () => _checkAnswer(_currentSegmentIndex),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF6366F1),
                         padding: const EdgeInsets.symmetric(vertical: 16),
@@ -653,13 +619,7 @@ class _DictationPlayerScreenState extends State<DictationPlayerScreen>
                 ] else ...[
                   Expanded(
                     child: OutlinedButton(
-                      onPressed: () {
-                        setState(() {
-                          _hasChecked = false;
-                          _feedback = null;
-                          _inputController.clear();
-                        });
-                      },
+                      onPressed: () => _retrySegment(_currentSegmentIndex),
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         side: const BorderSide(
@@ -690,7 +650,7 @@ class _DictationPlayerScreenState extends State<DictationPlayerScreen>
                   const SizedBox(width: 12),
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: _nextSentence,
+                      onPressed: _nextSegment,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF6366F1),
                         padding: const EdgeInsets.symmetric(vertical: 16),
@@ -703,8 +663,8 @@ class _DictationPlayerScreenState extends State<DictationPlayerScreen>
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            _currentSentenceIndex < _sentences.length - 1
-                                ? 'Next'
+                            _currentSegmentIndex < segments.length - 1
+                                ? 'Next Sentence'
                                 : 'Finish',
                             style: const TextStyle(
                               color: Colors.white,
@@ -714,7 +674,7 @@ class _DictationPlayerScreenState extends State<DictationPlayerScreen>
                           ),
                           const SizedBox(width: 8),
                           Icon(
-                            _currentSentenceIndex < _sentences.length - 1
+                            _currentSegmentIndex < segments.length - 1
                                 ? Icons.arrow_forward
                                 : Icons.check_circle,
                             color: Colors.white,

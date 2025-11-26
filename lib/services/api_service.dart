@@ -158,6 +158,96 @@ class ApiService extends GetConnect {
     }
   }
 
+  // ==================== DICTATION ====================
+  
+  Future<List<dynamic>> getDictationContent(Map<String, String> queryParams) async {
+    try {
+      String queryString = '';
+      if (queryParams.isNotEmpty) {
+        queryString = '?' + queryParams.entries
+            .map((e) => '${e.key}=${Uri.encodeComponent(e.value)}')
+            .join('&');
+      }
+      
+      final response = await get('/dictation$queryString');
+      
+      if (response.hasError) {
+        throw _handleError(response);
+      }
+      
+      final responseData = response.body;
+      if (responseData['success'] == true) {
+        return responseData['data'] ?? [];
+      }
+      return [];
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>?> getDictationById(int id) async {
+    try {
+      final response = await get('/dictation/$id');
+      
+      if (response.hasError) {
+        throw _handleError(response);
+      }
+      
+      final responseData = response.body;
+      if (responseData['success'] == true) {
+        return responseData['data'];
+      }
+      return null;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>> addYouTubeVideo({
+    required int userId,
+    required String sourceURL,
+    required String difficulty,
+  }) async {
+    try {
+      final response = await post('/dictation/user-add-youtube', {
+        'userId': userId,
+        'sourceURL': sourceURL,
+        'difficulty': difficulty,
+      });
+      
+      if (response.hasError) {
+        throw _handleError(response);
+      }
+      
+      return response.body;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>> submitDictationResult({
+    required int contentId,
+    required int userId,
+    required String userTranscript,
+    int? timeSpent,
+  }) async {
+    try {
+      final response = await post('/dictation/$contentId/submit', {
+        'userId': userId,
+        'userTranscript': userTranscript,
+        'timeSpent': timeSpent,
+      });
+      
+      if (response.hasError) {
+        throw _handleError(response);
+      }
+      
+      return response.body;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   // ==================== ERROR HANDLING ====================
   
   String _handleError(Response response) {
