@@ -12,12 +12,15 @@ class QuizTopicsScreen extends StatefulWidget {
 }
 
 class _QuizTopicsScreenState extends State<QuizTopicsScreen> {
+  late final QuizController _controller;
+
   @override
   void initState() {
     super.initState();
+    // Sử dụng Get.put với permanent để controller không bị dispose
+    _controller = Get.put(QuizController(), permanent: true);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final ctrl = Get.put(QuizController());
-      ctrl.loadQuizTopics();
+      _controller.loadQuizTopics();
     });
   }
 

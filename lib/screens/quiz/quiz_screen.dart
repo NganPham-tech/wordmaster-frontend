@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../controllers/quiz_controller.dart';
 import '../../data/models/quiz_topic_model.dart';
+import '../../services/tts_service.dart';
 import 'quiz_result_screen.dart';
 
 class QuizScreen extends StatefulWidget {
@@ -16,16 +17,26 @@ class QuizScreen extends StatefulWidget {
 class _QuizScreenState extends State<QuizScreen> {
   int? _selectedAnswer;
   bool _showExplanation = false;
+  final TextEditingController _fillInBlankController = TextEditingController();
+  bool _isTtsPlaying = false;
 
   @override
   void initState() {
     super.initState();
+    TtsService.initialize();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final ctrl = Get.isRegistered<QuizController>()
           ? Get.find<QuizController>()
           : Get.put(QuizController());
       ctrl.startQuiz(widget.topic);
     });
+  }
+
+  @override
+  void dispose() {
+    _fillInBlankController.dispose();
+    TtsService.stop();
+    super.dispose();
   }
 
   @override
@@ -204,6 +215,12 @@ class _QuizScreenState extends State<QuizScreen> {
                                 height: 1.4,
                               ),
                             ),
+                            
+                            // TTS Audio Controls
+                            if (currentQuestion.useTts) ...[
+                              const SizedBox(height: 16),
+                              _buildTtsControls(currentQuestion),
+                            ],
                           ],
                         ),
                       ),
@@ -211,29 +228,133 @@ class _QuizScreenState extends State<QuizScreen> {
 
                     const SizedBox(height: 20),
 
-                    // Answer options
-                    Expanded(
-                      child: ListView.builder(
-                        itemCount: currentQuestion.options.length,
-                        itemBuilder: (context, index) {
-                          final isSelected = _selectedAnswer == index;
-                          final isCorrect =
-                              index == currentQuestion.correctAnswerIndex;
-
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
-                            child: AnswerOption(
-                              text: currentQuestion.options[index],
-                              isSelected: isSelected,
-                              isCorrect: _showExplanation ? isCorrect : null,
-                              onTap: _showExplanation
-                                  ? null
-                                  : () => _selectAnswer(index),
+                    // Answer options - Kiểm tra questionType
+                    if (currentQuestion.questionType == 'FillInBlank')
+                      // Fill in the blank input
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Your answer:',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF475569),
+                              ),
                             ),
-                          );
-                        },
+                            const SizedBox(height: 12),
+                            TextField(
+                              controller: _fillInBlankController,
+                              enabled: !_showExplanation,
+                              decoration: InputDecoration(
+                                hintText: 'Type your answer here...',
+                                filled: true,
+                                fillColor: const Color(0xFFF8FAFC),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(color: Colors.grey[300]!),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(color: Colors.grey[300]!),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: const BorderSide(
+                                    color: Color(0xFF6366F1),
+                                    width: 2,
+                                  ),
+                                ),
+                              ),
+                              onChanged: (value) {
+                                setState(() {
+                                  _selectedAnswer = value.isNotEmpty ? 0 : null;
+                                });
+                                final ctrl = Get.find<QuizController>();
+                                ctrl.answerQuestion(0, textAnswer: value);
+                              },
+                            ),
+                            if (_showExplanation) ...[
+                              const SizedBox(height: 12),
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: _fillInBlankController.text.trim().toLowerCase() ==
+                                          currentQuestion.correctAnswer.trim().toLowerCase()
+                                      ? Colors.green[50]
+                                      : Colors.red[50],
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: _fillInBlankController.text.trim().toLowerCase() ==
+                                            currentQuestion.correctAnswer.trim().toLowerCase()
+                                        ? Colors.green
+                                        : Colors.red,
+                                    width: 2,
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      _fillInBlankController.text.trim().toLowerCase() ==
+                                              currentQuestion.correctAnswer.trim().toLowerCase()
+                                          ? Icons.check_circle
+                                          : Icons.cancel,
+                                      color: _fillInBlankController.text.trim().toLowerCase() ==
+                                              currentQuestion.correctAnswer.trim().toLowerCase()
+                                          ? Colors.green
+                                          : Colors.red,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        _fillInBlankController.text.trim().toLowerCase() ==
+                                                currentQuestion.correctAnswer.trim().toLowerCase()
+                                            ? 'Correct!'
+                                            : 'Correct answer: ${currentQuestion.correctAnswer}',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          color: _fillInBlankController.text.trim().toLowerCase() ==
+                                                  currentQuestion.correctAnswer.trim().toLowerCase()
+                                              ? Colors.green[700]
+                                              : Colors.red[700],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      )
+                    else
+                      // Multiple choice options
+                      Expanded(
+                        child: ListView.builder(
+                          itemCount: currentQuestion.options.length,
+                          itemBuilder: (context, index) {
+                            final isSelected = _selectedAnswer == index;
+                            final isCorrect =
+                                index == currentQuestion.correctAnswerIndex;
+
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: AnswerOption(
+                                text: currentQuestion.options[index],
+                                isSelected: isSelected,
+                                isCorrect: _showExplanation ? isCorrect : null,
+                                onTap: _showExplanation
+                                    ? null
+                                    : () => _selectAnswer(index),
+                              ),
+                            );
+                          },
+                        ),
                       ),
-                    ),
+
+                    const SizedBox(height: 16),
 
                     // Explanation (if shown)
                     if (_showExplanation) ...[
@@ -357,6 +478,7 @@ class _QuizScreenState extends State<QuizScreen> {
     setState(() {
       _selectedAnswer = null;
       _showExplanation = false;
+      _fillInBlankController.clear();
     });
   }
 
@@ -388,6 +510,73 @@ class _QuizScreenState extends State<QuizScreen> {
       default:
         return Colors.grey;
     }
+  }
+
+  Widget _buildTtsControls(QuizQuestion question) {
+    final textToSpeak = question.audioText.isNotEmpty 
+        ? question.audioText 
+        : question.question;
+    
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF6366F1).withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: const Color(0xFF6366F1).withOpacity(0.3),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.volume_up,
+            color: Color(0xFF6366F1),
+            size: 20,
+          ),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Text(
+              'Listening Question',
+              style: TextStyle(
+                color: Color(0xFF6366F1),
+                fontWeight: FontWeight.w600,
+                fontSize: 14,
+              ),
+            ),
+          ),
+          // Play button
+          IconButton(
+            onPressed: () async {
+              setState(() => _isTtsPlaying = true);
+              await TtsService.speak(textToSpeak);
+              setState(() => _isTtsPlaying = false);
+            },
+            icon: Icon(
+              _isTtsPlaying ? Icons.stop_circle : Icons.play_circle_filled,
+              color: const Color(0xFF6366F1),
+              size: 32,
+            ),
+            tooltip: _isTtsPlaying ? 'Stop' : 'Play',
+          ),
+          // Replay button
+          IconButton(
+            onPressed: () async {
+              await TtsService.stop();
+              setState(() => _isTtsPlaying = true);
+              await TtsService.speak(textToSpeak);
+              setState(() => _isTtsPlaying = false);
+            },
+            icon: const Icon(
+              Icons.replay,
+              color: Color(0xFF6366F1),
+              size: 28,
+            ),
+            tooltip: 'Replay',
+          ),
+        ],
+      ),
+    );
   }
 
   void _showQuitDialog() {

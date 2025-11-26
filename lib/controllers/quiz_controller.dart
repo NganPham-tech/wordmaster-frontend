@@ -7,6 +7,7 @@ class QuizController extends GetxController {
   final RxList<QuizTopic> topics = <QuizTopic>[].obs;
   final RxList<QuizQuestion> currentQuestions = <QuizQuestion>[].obs;
   final RxList<int> userAnswers = <int>[].obs;
+  final RxMap<int, String> userTextAnswers = <int, String>{}.obs; // Thêm để lưu text answers
   final Rxn<QuizTopic> currentTopic = Rxn<QuizTopic>();
   final RxInt currentQuestionIndex = 0.obs;
   final RxBool isLoading = false.obs;
@@ -51,13 +52,20 @@ class QuizController extends GetxController {
     }
   }
 
-  void answerQuestion(int answerIndex) {
+  void answerQuestion(int answerIndex, {String? textAnswer}) {
     if (currentQuestionIndex.value < userAnswers.length) {
       userAnswers[currentQuestionIndex.value] = answerIndex;
     } else {
       userAnswers.add(answerIndex);
     }
+    
+    // Lưu text answer cho FillInBlank
+    if (textAnswer != null) {
+      userTextAnswers[currentQuestionIndex.value] = textAnswer;
+    }
+    
     userAnswers.refresh();
+    userTextAnswers.refresh();
   }
 
   bool nextQuestion() {
@@ -82,9 +90,24 @@ class QuizController extends GetxController {
     }
     int correctAnswers = 0;
     for (int i = 0; i < currentQuestions.length; i++) {
-      if (i < userAnswers.length &&
-          userAnswers[i] == currentQuestions[i].correctAnswerIndex) {
-        correctAnswers++;
+      final question = currentQuestions[i];
+      
+      // Kiểm tra theo loại câu hỏi
+      if (question.questionType == 'FillInBlank') {
+        // So sánh text answer (case-insensitive)
+        if (userTextAnswers.containsKey(i)) {
+          final userAnswer = userTextAnswers[i]!.trim().toLowerCase();
+          final correctAnswer = question.correctAnswer.trim().toLowerCase();
+          if (userAnswer == correctAnswer) {
+            correctAnswers++;
+          }
+        }
+      } else {
+        // Multiple choice - so sánh index
+        if (i < userAnswers.length &&
+            userAnswers[i] == question.correctAnswerIndex) {
+          correctAnswers++;
+        }
       }
     }
     int totalQuestions = currentQuestions.length;
@@ -107,6 +130,7 @@ class QuizController extends GetxController {
     currentTopic.value = null;
     currentQuestions.clear();
     userAnswers.clear();
+    userTextAnswers.clear();
     currentQuestionIndex.value = 0;
     _quizStartTime = null;
   }
