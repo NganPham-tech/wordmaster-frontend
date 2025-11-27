@@ -215,7 +215,7 @@ class _QuizScreenState extends State<QuizScreen> {
                                 height: 1.4,
                               ),
                             ),
-                            
+
                             // TTS Audio Controls
                             if (currentQuestion.useTts) ...[
                               const SizedBox(height: 16),
@@ -254,11 +254,15 @@ class _QuizScreenState extends State<QuizScreen> {
                                 fillColor: const Color(0xFFF8FAFC),
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(color: Colors.grey[300]!),
+                                  borderSide: BorderSide(
+                                    color: Colors.grey[300]!,
+                                  ),
                                 ),
                                 enabledBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(color: Colors.grey[300]!),
+                                  borderSide: BorderSide(
+                                    color: Colors.grey[300]!,
+                                  ),
                                 ),
                                 focusedBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
@@ -281,14 +285,24 @@ class _QuizScreenState extends State<QuizScreen> {
                               Container(
                                 padding: const EdgeInsets.all(12),
                                 decoration: BoxDecoration(
-                                  color: _fillInBlankController.text.trim().toLowerCase() ==
-                                          currentQuestion.correctAnswer.trim().toLowerCase()
+                                  color:
+                                      _fillInBlankController.text
+                                              .trim()
+                                              .toLowerCase() ==
+                                          currentQuestion.correctAnswer
+                                              .trim()
+                                              .toLowerCase()
                                       ? Colors.green[50]
                                       : Colors.red[50],
                                   borderRadius: BorderRadius.circular(8),
                                   border: Border.all(
-                                    color: _fillInBlankController.text.trim().toLowerCase() ==
-                                            currentQuestion.correctAnswer.trim().toLowerCase()
+                                    color:
+                                        _fillInBlankController.text
+                                                .trim()
+                                                .toLowerCase() ==
+                                            currentQuestion.correctAnswer
+                                                .trim()
+                                                .toLowerCase()
                                         ? Colors.green
                                         : Colors.red,
                                     width: 2,
@@ -297,26 +311,44 @@ class _QuizScreenState extends State<QuizScreen> {
                                 child: Row(
                                   children: [
                                     Icon(
-                                      _fillInBlankController.text.trim().toLowerCase() ==
-                                              currentQuestion.correctAnswer.trim().toLowerCase()
+                                      _fillInBlankController.text
+                                                  .trim()
+                                                  .toLowerCase() ==
+                                              currentQuestion.correctAnswer
+                                                  .trim()
+                                                  .toLowerCase()
                                           ? Icons.check_circle
                                           : Icons.cancel,
-                                      color: _fillInBlankController.text.trim().toLowerCase() ==
-                                              currentQuestion.correctAnswer.trim().toLowerCase()
+                                      color:
+                                          _fillInBlankController.text
+                                                  .trim()
+                                                  .toLowerCase() ==
+                                              currentQuestion.correctAnswer
+                                                  .trim()
+                                                  .toLowerCase()
                                           ? Colors.green
                                           : Colors.red,
                                     ),
                                     const SizedBox(width: 8),
                                     Expanded(
                                       child: Text(
-                                        _fillInBlankController.text.trim().toLowerCase() ==
-                                                currentQuestion.correctAnswer.trim().toLowerCase()
+                                        _fillInBlankController.text
+                                                    .trim()
+                                                    .toLowerCase() ==
+                                                currentQuestion.correctAnswer
+                                                    .trim()
+                                                    .toLowerCase()
                                             ? 'Correct!'
                                             : 'Correct answer: ${currentQuestion.correctAnswer}',
                                         style: TextStyle(
                                           fontWeight: FontWeight.bold,
-                                          color: _fillInBlankController.text.trim().toLowerCase() ==
-                                                  currentQuestion.correctAnswer.trim().toLowerCase()
+                                          color:
+                                              _fillInBlankController.text
+                                                      .trim()
+                                                      .toLowerCase() ==
+                                                  currentQuestion.correctAnswer
+                                                      .trim()
+                                                      .toLowerCase()
                                               ? Colors.green[700]
                                               : Colors.red[700],
                                         ),
@@ -513,10 +545,10 @@ class _QuizScreenState extends State<QuizScreen> {
   }
 
   Widget _buildTtsControls(QuizQuestion question) {
-    final textToSpeak = question.audioText.isNotEmpty 
-        ? question.audioText 
+    final textToSpeak = question.audioText.isNotEmpty
+        ? question.audioText
         : question.question;
-    
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -529,11 +561,7 @@ class _QuizScreenState extends State<QuizScreen> {
       ),
       child: Row(
         children: [
-          const Icon(
-            Icons.volume_up,
-            color: Color(0xFF6366F1),
-            size: 20,
-          ),
+          const Icon(Icons.volume_up, color: Color(0xFF6366F1), size: 20),
           const SizedBox(width: 12),
           const Expanded(
             child: Text(
@@ -567,11 +595,7 @@ class _QuizScreenState extends State<QuizScreen> {
               await TtsService.speak(textToSpeak);
               setState(() => _isTtsPlaying = false);
             },
-            icon: const Icon(
-              Icons.replay,
-              color: Color(0xFF6366F1),
-              size: 28,
-            ),
+            icon: const Icon(Icons.replay, color: Color(0xFF6366F1), size: 28),
             tooltip: 'Replay',
           ),
         ],

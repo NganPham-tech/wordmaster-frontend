@@ -7,7 +7,8 @@ class QuizController extends GetxController {
   final RxList<QuizTopic> topics = <QuizTopic>[].obs;
   final RxList<QuizQuestion> currentQuestions = <QuizQuestion>[].obs;
   final RxList<int> userAnswers = <int>[].obs;
-  final RxMap<int, String> userTextAnswers = <int, String>{}.obs; // Thêm để lưu text answers
+  final RxMap<int, String> userTextAnswers =
+      <int, String>{}.obs; // Thêm để lưu text answers
   final Rxn<QuizTopic> currentTopic = Rxn<QuizTopic>();
   final RxInt currentQuestionIndex = 0.obs;
   final RxBool isLoading = false.obs;
@@ -58,12 +59,12 @@ class QuizController extends GetxController {
     } else {
       userAnswers.add(answerIndex);
     }
-    
+
     // Lưu text answer cho FillInBlank
     if (textAnswer != null) {
       userTextAnswers[currentQuestionIndex.value] = textAnswer;
     }
-    
+
     userAnswers.refresh();
     userTextAnswers.refresh();
   }
@@ -91,7 +92,7 @@ class QuizController extends GetxController {
     int correctAnswers = 0;
     for (int i = 0; i < currentQuestions.length; i++) {
       final question = currentQuestions[i];
-      
+
       // Kiểm tra theo loại câu hỏi
       if (question.questionType == 'FillInBlank') {
         // So sánh text answer (case-insensitive)

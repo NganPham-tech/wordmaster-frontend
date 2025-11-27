@@ -119,7 +119,7 @@ class QuizQuestion {
 
   factory QuizQuestion.fromMap(Map<String, dynamic> map) {
     List<String> options = [];
-    
+
     // Parse options từ backend
     if (map['options'] != null) {
       // Nếu backend trả về array of objects: [{id, optionText, isCorrect}]
@@ -136,11 +136,11 @@ class QuizQuestion {
         options = (map['options'] as String).split('|');
       }
     }
-    
+
     // Tìm correct answer index từ options array
     int correctIndex = 0;
     String correctAnswer = map['correctAnswer'] ?? '';
-    
+
     if (map['correctAnswerIndex'] != null) {
       correctIndex = map['correctAnswerIndex'];
     } else if (map['correct_answer_index'] != null) {
@@ -169,7 +169,8 @@ class QuizQuestion {
       useTts: map['useTts'] ?? false,
       audioText: map['audioText'] ?? '',
     );
-  }  Map<String, dynamic> toMap() {
+  }
+  Map<String, dynamic> toMap() {
     return {
       'id': id,
       'question': question,
