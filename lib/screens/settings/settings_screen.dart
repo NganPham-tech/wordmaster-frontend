@@ -1,6 +1,7 @@
 // lib/screens/settings/settings_screen.dart
 import 'package:flutter/material.dart';
 import '../../services/auth_service.dart';
+
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
 
@@ -225,10 +226,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 child: const Text(
                   'Đăng xuất',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 16,
-                  ),
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
                 ),
               ),
             ),
@@ -246,9 +244,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 child: const Text(
                   'Xóa tài khoản',
-                  style: TextStyle(
-                    fontSize: 14,
-                  ),
+                  style: TextStyle(fontSize: 14),
                 ),
               ),
             ),
@@ -291,17 +287,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
         children: children.asMap().entries.map((entry) {
           final index = entry.key;
           final child = entry.value;
-          
+
           return Column(
             children: [
               child,
               if (index < children.length - 1)
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Divider(
-                    height: 1,
-                    color: Colors.grey[200],
-                  ),
+                  child: Divider(height: 1, color: Colors.grey[200]),
                 ),
             ],
           );
@@ -335,12 +328,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
       subtitle: Text(
         subtitle,
-        style: TextStyle(
-          fontSize: 12,
-          color: Colors.grey[600],
-        ),
+        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
       ),
-      trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+      trailing: const Icon(
+        Icons.arrow_forward_ios,
+        size: 16,
+        color: Colors.grey,
+      ),
       onTap: onTap,
     );
   }
@@ -371,10 +365,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
       subtitle: Text(
         subtitle,
-        style: TextStyle(
-          fontSize: 12,
-          color: Colors.grey[600],
-        ),
+        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
       ),
       trailing: Switch(
         value: value,
@@ -411,10 +402,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
       subtitle: Text(
         subtitle,
-        style: TextStyle(
-          fontSize: 12,
-          color: Colors.grey[600],
-        ),
+        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
       ),
       trailing: DropdownButton<String>(
         value: value,
@@ -423,10 +411,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         items: items.map((String item) {
           return DropdownMenuItem<String>(
             value: item,
-            child: Text(
-              item,
-              style: const TextStyle(fontSize: 14),
-            ),
+            child: Text(item, style: const TextStyle(fontSize: 14)),
           );
         }).toList(),
       ),
@@ -529,21 +514,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _performLogout() async {
+    final authService = AuthService.instance;
 
-  final authService = AuthService.instance;
-  
-  await authService.logout();
-  
-  if (mounted) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Đã đăng xuất thành công'),
-        backgroundColor: Color(0xFF10B981),
-      ),
-    );
-    
-    // Quay về màn hình chính
-    Navigator.of(context).popUntil((route) => route.isFirst);
+    await authService.logout();
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Đã đăng xuất thành công'),
+          backgroundColor: Color(0xFF10B981),
+        ),
+      );
+
+      // Quay về màn hình chính
+      Navigator.of(context).popUntil((route) => route.isFirst);
+    }
   }
-}
 }

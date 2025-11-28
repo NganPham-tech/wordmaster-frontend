@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import '../../data/models/quiz_topic_model.dart';
 
 class QuizResultScreen extends StatelessWidget {
@@ -217,7 +218,7 @@ class QuizResultScreen extends StatelessWidget {
               children: [
                 Expanded(
                   child: OutlinedButton.icon(
-                    onPressed: () => Navigator.of(context).pop(),
+                    onPressed: () => Get.back(),
                     icon: const Icon(Icons.list),
                     label: const Text('Back to Topics'),
                     style: OutlinedButton.styleFrom(
@@ -305,8 +306,8 @@ class QuizResultScreen extends StatelessWidget {
   }
 
   void _retakeQuiz(BuildContext context) {
-    Navigator.of(context).pop();
-    Navigator.of(context).pop();
+    Get.back();
+    Get.back();
   }
 
   void _shareResults() {

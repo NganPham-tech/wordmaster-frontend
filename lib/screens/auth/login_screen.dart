@@ -1,4 +1,4 @@
-// lib/screens/auth/login_screen.dart 
+// lib/screens/auth/login_screen.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../services/auth_service.dart';
@@ -16,7 +16,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _authService = AuthService.instance;
-  
+
   bool _isLoading = false;
   bool _obscurePassword = true;
 
@@ -171,10 +171,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 Center(
                   child: Text(
                     'Đăng nhập để tiếp tục học tập',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey[600],
-                    ),
+                    style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                   ),
                 ),
                 const SizedBox(height: 32),
@@ -206,10 +203,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: Text(
                         'hoặc đăng nhập với email',
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 13,
-                        ),
+                        style: TextStyle(color: Colors.grey[600], fontSize: 13),
                       ),
                     ),
                     Expanded(child: Divider(color: Colors.grey[300])),

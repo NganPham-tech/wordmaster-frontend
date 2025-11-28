@@ -13,7 +13,8 @@ class ProfileScreen extends StatefulWidget {
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProviderStateMixin {
+class _ProfileScreenState extends State<ProfileScreen>
+    with SingleTickerProviderStateMixin {
   final _authService = AuthService.instance;
   late UserProfile _userProfile;
   late List<StudyStat> _weeklyStats;
@@ -47,13 +48,48 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     );
 
     _weeklyStats = [
-      StudyStat(date: DateTime.now().subtract(const Duration(days: 6)), minutesStudied: 25, cardsLearned: 15, quizzesCompleted: 2),
-      StudyStat(date: DateTime.now().subtract(const Duration(days: 5)), minutesStudied: 40, cardsLearned: 22, quizzesCompleted: 3),
-      StudyStat(date: DateTime.now().subtract(const Duration(days: 4)), minutesStudied: 35, cardsLearned: 18, quizzesCompleted: 1),
-      StudyStat(date: DateTime.now().subtract(const Duration(days: 3)), minutesStudied: 50, cardsLearned: 30, quizzesCompleted: 4),
-      StudyStat(date: DateTime.now().subtract(const Duration(days: 2)), minutesStudied: 20, cardsLearned: 12, quizzesCompleted: 2),
-      StudyStat(date: DateTime.now().subtract(const Duration(days: 1)), minutesStudied: 45, cardsLearned: 25, quizzesCompleted: 3),
-      StudyStat(date: DateTime.now(), minutesStudied: 30, cardsLearned: 20, quizzesCompleted: 2),
+      StudyStat(
+        date: DateTime.now().subtract(const Duration(days: 6)),
+        minutesStudied: 25,
+        cardsLearned: 15,
+        quizzesCompleted: 2,
+      ),
+      StudyStat(
+        date: DateTime.now().subtract(const Duration(days: 5)),
+        minutesStudied: 40,
+        cardsLearned: 22,
+        quizzesCompleted: 3,
+      ),
+      StudyStat(
+        date: DateTime.now().subtract(const Duration(days: 4)),
+        minutesStudied: 35,
+        cardsLearned: 18,
+        quizzesCompleted: 1,
+      ),
+      StudyStat(
+        date: DateTime.now().subtract(const Duration(days: 3)),
+        minutesStudied: 50,
+        cardsLearned: 30,
+        quizzesCompleted: 4,
+      ),
+      StudyStat(
+        date: DateTime.now().subtract(const Duration(days: 2)),
+        minutesStudied: 20,
+        cardsLearned: 12,
+        quizzesCompleted: 2,
+      ),
+      StudyStat(
+        date: DateTime.now().subtract(const Duration(days: 1)),
+        minutesStudied: 45,
+        cardsLearned: 25,
+        quizzesCompleted: 3,
+      ),
+      StudyStat(
+        date: DateTime.now(),
+        minutesStudied: 30,
+        cardsLearned: 20,
+        quizzesCompleted: 2,
+      ),
     ];
 
     _recentActivities = [
@@ -139,7 +175,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                 children: [
                   // Background pattern
                   _buildBackgroundPattern(),
-                  
+
                   Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -177,10 +213,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                         const SizedBox(height: 8),
                         const Text(
                           'Học tiếng Anh thông minh',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.white,
-                          ),
+                          style: TextStyle(fontSize: 16, color: Colors.white),
                         ),
                       ],
                     ),
@@ -188,14 +221,14 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                 ],
               ),
             ),
-            
+
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(24),
                 child: Column(
                   children: [
                     const SizedBox(height: 20),
-                    
+
                     // Benefits section
                     _buildBenefitItem(
                       icon: Icons.trending_up,
@@ -220,9 +253,9 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                       title: 'Bảng xếp hạng',
                       subtitle: 'So tài với bạn bè và cộng đồng',
                     ),
-                    
+
                     const SizedBox(height: 40),
-                    
+
                     // CTA Buttons
                     Column(
                       children: [
@@ -251,7 +284,10 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                                   width: 20,
                                   height: 20,
                                   errorBuilder: (context, error, stackTrace) {
-                                    return const Icon(Icons.g_mobiledata, size: 24);
+                                    return const Icon(
+                                      Icons.g_mobiledata,
+                                      size: 24,
+                                    );
                                   },
                                 ),
                                 const SizedBox(width: 12),
@@ -267,7 +303,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                           ),
                         ),
                         const SizedBox(height: 12),
-                        
+
                         // Continue with Facebook
                         SizedBox(
                           width: double.infinity,
@@ -309,13 +345,15 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                           ),
                         ),
                         const SizedBox(height: 12),
-                        
+
                         // Divider
                         Row(
                           children: [
                             Expanded(child: Divider(color: Colors.grey[300])),
                             Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                              ),
                               child: Text(
                                 'hoặc',
                                 style: TextStyle(
@@ -328,7 +366,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                           ],
                         ),
                         const SizedBox(height: 12),
-                        
+
                         // Create Account Button
                         SizedBox(
                           width: double.infinity,
@@ -355,7 +393,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                           ),
                         ),
                         const SizedBox(height: 16),
-                        
+
                         // Login Link
                         TextButton(
                           onPressed: () {
@@ -382,9 +420,9 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                         ),
                       ],
                     ),
-                    
+
                     const SizedBox(height: 40),
-                    
+
                     // Footer text
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -444,11 +482,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
               color: const Color(0xFF58CC02).withOpacity(0.1),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(
-              icon,
-              color: const Color(0xFF58CC02),
-              size: 24,
-            ),
+            child: Icon(icon, color: const Color(0xFF58CC02), size: 24),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -466,10 +500,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                 const SizedBox(height: 4),
                 Text(
                   subtitle,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.grey[600],
-                  ),
+                  style: TextStyle(fontSize: 13, color: Colors.grey[600]),
                 ),
               ],
             ),
@@ -529,10 +560,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
             Expanded(
               child: TabBarView(
                 controller: _tabController,
-                children: [
-                  _buildStatsTab(),
-                  _buildActivityTab(),
-                ],
+                children: [_buildStatsTab(), _buildActivityTab()],
               ),
             ),
           ],
@@ -602,7 +630,11 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.settings, color: Colors.white, size: 24),
+                  icon: const Icon(
+                    Icons.settings,
+                    color: Colors.white,
+                    size: 24,
+                  ),
                   onPressed: _openSettings,
                 ),
               ],
@@ -654,10 +686,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
       decoration: BoxDecoration(
         color: color.withOpacity(0.05),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: color.withOpacity(0.2),
-          width: 1,
-        ),
+        border: Border.all(color: color.withOpacity(0.2), width: 1),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -829,10 +858,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
         const SizedBox(height: 4),
         Text(
           label,
-          style: TextStyle(
-            fontSize: 11,
-            color: Colors.grey[600],
-          ),
+          style: TextStyle(fontSize: 11, color: Colors.grey[600]),
           textAlign: TextAlign.center,
         ),
       ],
@@ -840,8 +866,10 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
   }
 
   Widget _buildWeeklyChart() {
-    final maxMinutes = _weeklyStats.map((e) => e.minutesStudied).reduce((a, b) => a > b ? a : b);
-    
+    final maxMinutes = _weeklyStats
+        .map((e) => e.minutesStudied)
+        .reduce((a, b) => a > b ? a : b);
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -864,8 +892,10 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
               children: _weeklyStats.asMap().entries.map((entry) {
                 final index = entry.key;
                 final stat = entry.value;
-                final height = maxMinutes > 0 ? (stat.minutesStudied / maxMinutes) * 60 : 0.0;
-                
+                final height = maxMinutes > 0
+                    ? (stat.minutesStudied / maxMinutes) * 60
+                    : 0.0;
+
                 return Expanded(
                   child: Column(
                     children: [
@@ -896,10 +926,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                       const SizedBox(height: 4),
                       Text(
                         _getDayName(index),
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: Colors.grey[600],
-                        ),
+                        style: TextStyle(fontSize: 10, color: Colors.grey[600]),
                       ),
                     ],
                   ),
@@ -919,10 +946,30 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
 
   Widget _buildAchievementProgress() {
     final achievements = [
-      {'name': 'Học 100 thẻ', 'progress': 234.0, 'target': 100, 'completed': true},
-      {'name': 'Streak 7 ngày', 'progress': 7.0, 'target': 7, 'completed': true},
-      {'name': 'Hoàn thành 50 quiz', 'progress': 45.0, 'target': 50, 'completed': false},
-      {'name': 'Độ chính xác 80%', 'progress': 78.5, 'target': 80, 'completed': false},
+      {
+        'name': 'Học 100 thẻ',
+        'progress': 234.0,
+        'target': 100,
+        'completed': true,
+      },
+      {
+        'name': 'Streak 7 ngày',
+        'progress': 7.0,
+        'target': 7,
+        'completed': true,
+      },
+      {
+        'name': 'Hoàn thành 50 quiz',
+        'progress': 45.0,
+        'target': 50,
+        'completed': false,
+      },
+      {
+        'name': 'Độ chính xác 80%',
+        'progress': 78.5,
+        'target': 80,
+        'completed': false,
+      },
     ];
 
     return Container(
@@ -944,7 +991,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
           final progress = achievement['progress'] as double;
           final target = achievement['target'] as int;
           final percentage = isCompleted ? 1.0 : progress / target;
-          
+
           return Padding(
             padding: const EdgeInsets.only(bottom: 12),
             child: Column(
@@ -966,10 +1013,14 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      isCompleted ? 'Hoàn thành' : '${progress.toInt()}/$target',
+                      isCompleted
+                          ? 'Hoàn thành'
+                          : '${progress.toInt()}/$target',
                       style: TextStyle(
                         fontSize: 11,
-                        color: isCompleted ? const Color(0xFF10B981) : Colors.grey[600],
+                        color: isCompleted
+                            ? const Color(0xFF10B981)
+                            : Colors.grey[600],
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -983,7 +1034,9 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                     minHeight: 4,
                     backgroundColor: Colors.grey[200],
                     valueColor: AlwaysStoppedAnimation<Color>(
-                      isCompleted ? const Color(0xFF10B981) : const Color(0xFF6366F1),
+                      isCompleted
+                          ? const Color(0xFF10B981)
+                          : const Color(0xFF6366F1),
                     ),
                   ),
                 ),
@@ -1034,19 +1087,13 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                 const SizedBox(height: 2),
                 Text(
                   activity.description,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Colors.grey[600],
-                  ),
+                  style: TextStyle(fontSize: 11, color: Colors.grey[600]),
                 ),
                 if (activity.deckName != null) ...[
                   const SizedBox(height: 2),
                   Text(
                     'Bộ: ${activity.deckName}',
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: Colors.grey[500],
-                    ),
+                    style: TextStyle(fontSize: 10, color: Colors.grey[500]),
                   ),
                 ],
               ],
@@ -1057,15 +1104,15 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
             children: [
               Text(
                 _getTimeAgo(activity.timestamp),
-                style: TextStyle(
-                  fontSize: 10,
-                  color: Colors.grey[500],
-                ),
+                style: TextStyle(fontSize: 10, color: Colors.grey[500]),
               ),
               if (activity.score != null) ...[
                 const SizedBox(height: 4),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: _getScoreColor(activity.score!),
                     borderRadius: BorderRadius.circular(6),

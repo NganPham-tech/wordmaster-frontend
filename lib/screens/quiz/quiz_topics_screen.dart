@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../../providers/quiz_provider.dart';
+import 'package:get/get.dart';
+import '../../controllers/quiz_controller.dart';
 import '../../data/models/quiz_topic_model.dart';
 import 'quiz_screen.dart';
 
@@ -12,11 +12,15 @@ class QuizTopicsScreen extends StatefulWidget {
 }
 
 class _QuizTopicsScreenState extends State<QuizTopicsScreen> {
+  late final QuizController _controller;
+
   @override
   void initState() {
     super.initState();
+    // Sử dụng Get.put với permanent để controller không bị dispose
+    _controller = Get.put(QuizController(), permanent: true);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<QuizProvider>(context, listen: false).loadQuizTopics();
+      _controller.loadQuizTopics();
     });
   }
 
@@ -37,106 +41,103 @@ class _QuizTopicsScreenState extends State<QuizTopicsScreen> {
         centerTitle: true,
         iconTheme: const IconThemeData(color: Color(0xFF1E293B)),
       ),
-      body: Consumer<QuizProvider>(
-        builder: (context, quizProvider, child) {
-          if (quizProvider.isLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
+      body: Obx(() {
+        final ctrl = Get.find<QuizController>();
+        if (ctrl.isLoading.value) {
+          return const Center(child: CircularProgressIndicator());
+        }
 
-          if (quizProvider.error != null) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.error_outline, size: 64, color: Colors.grey[400]),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Oops! Something went wrong',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    quizProvider.error!,
-                    style: TextStyle(fontSize: 14, color: Colors.grey[500]),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 24),
-                  ElevatedButton(
-                    onPressed: () => quizProvider.loadQuizTopics(),
-                    child: const Text('Try Again'),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          if (quizProvider.topics.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.quiz_outlined, size: 64, color: Colors.grey[400]),
-                  const SizedBox(height: 16),
-                  Text(
-                    'No quiz topics available',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Check back later for new quizzes!',
-                    style: TextStyle(fontSize: 14, color: Colors.grey[500]),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          return Padding(
-            padding: const EdgeInsets.all(16.0),
+        if (ctrl.error.value != null) {
+          return Center(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
+                Icon(Icons.error_outline, size: 64, color: Colors.grey[400]),
+                const SizedBox(height: 16),
                 Text(
-                  'Choose a topic to start your quiz',
+                  'Oops! Something went wrong',
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
                     color: Colors.grey[600],
-                    fontWeight: FontWeight.w500,
                   ),
                 ),
-                const SizedBox(height: 16),
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: quizProvider.topics.length,
-                    itemBuilder: (context, index) {
-                      final topic = quizProvider.topics[index];
-                      return QuizTopicCard(
-                        topic: topic,
-                        onTap: () => _startQuiz(context, topic),
-                      );
-                    },
-                  ),
+                const SizedBox(height: 8),
+                Text(
+                  ctrl.error.value!,
+                  style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: () => ctrl.loadQuizTopics(),
+                  child: const Text('Try Again'),
                 ),
               ],
             ),
           );
-        },
-      ),
+        }
+
+        if (ctrl.topics.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.quiz_outlined, size: 64, color: Colors.grey[400]),
+                const SizedBox(height: 16),
+                Text(
+                  'No quiz topics available',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey[600],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Check back later for new quizzes!',
+                  style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+                ),
+              ],
+            ),
+          );
+        }
+
+        return Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Choose a topic to start your quiz',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.grey[600],
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Expanded(
+                child: ListView.builder(
+                  itemCount: ctrl.topics.length,
+                  itemBuilder: (context, index) {
+                    final topic = ctrl.topics[index];
+                    return QuizTopicCard(
+                      topic: topic,
+                      onTap: () => _startQuiz(context, topic),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      }),
     );
   }
 
   void _startQuiz(BuildContext context, QuizTopic topic) {
-    Navigator.of(
-      context,
-    ).push(MaterialPageRoute(builder: (context) => QuizScreen(topic: topic)));
+    Get.to(() => QuizScreen(topic: topic));
   }
 }
 
@@ -148,7 +149,7 @@ class QuizTopicCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final quizProvider = Provider.of<QuizProvider>(context);
+    final ctrl = Get.find<QuizController>();
 
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
@@ -197,18 +198,16 @@ class QuizTopicCard extends StatelessWidget {
                         Row(
                           children: [
                             Icon(
-                              quizProvider.getDifficultyIcon(topic.difficulty),
+                              ctrl.getDifficultyIcon(topic.difficulty),
                               size: 16,
-                              color: quizProvider.getDifficultyColor(
-                                topic.difficulty,
-                              ),
+                              color: ctrl.getDifficultyColor(topic.difficulty),
                             ),
                             const SizedBox(width: 4),
                             Text(
                               topic.difficulty,
                               style: TextStyle(
                                 fontSize: 12,
-                                color: quizProvider.getDifficultyColor(
+                                color: ctrl.getDifficultyColor(
                                   topic.difficulty,
                                 ),
                                 fontWeight: FontWeight.w600,

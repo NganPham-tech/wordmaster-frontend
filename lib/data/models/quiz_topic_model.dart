@@ -18,19 +18,63 @@ class QuizTopic {
   });
 
   factory QuizTopic.fromMap(Map<String, dynamic> map) {
+    // Backend trả về: title, description, quizType, timeLimit, questions
+    int questionCount = 0;
+    if (map['questions'] != null) {
+      if (map['questions'] is List) {
+        questionCount = (map['questions'] as List).length;
+      } else if (map['_count'] != null && map['_count']['questions'] != null) {
+        questionCount = map['_count']['questions'];
+      }
+    }
+
+    // Lấy timeLimit từ backend (đơn vị: phút)
+    int timeInMinutes = map['timeLimit'] ?? map['estimated_time'] ?? 10;
+
     return QuizTopic(
       id: map['id'] ?? 0,
-      name: map['name'] ?? '',
+      name: map['title'] ?? map['name'] ?? '',
       description: map['description'] ?? '',
-      difficulty: map['difficulty'] ?? 'Medium',
-      questionCount: map['question_count'] ?? 0,
-      estimatedTime: Duration(minutes: map['estimated_time'] ?? 10),
-      tags: map['tags'] != null
-          ? List<String>.from(map['tags'] is String
-              ? (map['tags'] as String).split(',')
-              : map['tags'])
-          : [],
+      difficulty: map['quizType'] ?? map['difficulty'] ?? 'Medium',
+      questionCount: questionCount,
+      estimatedTime: Duration(minutes: timeInMinutes),
+      tags: _parseTags(map),
     );
+  }
+
+  static List<String> _parseTags(Map<String, dynamic> map) {
+    if (map['tags'] != null) {
+      if (map['tags'] is String) {
+        return (map['tags'] as String).split(',');
+      } else if (map['tags'] is List) {
+        return List<String>.from(map['tags']);
+      }
+    }
+
+    // Tạo tags từ các trường khác
+    List<String> tags = [];
+    if (map['category'] != null && map['category']['name'] != null) {
+      tags.add(map['category']['name']);
+    }
+    if (map['quizType'] != null) {
+      tags.add(_getEmojiForType(map['quizType']));
+    }
+    return tags;
+  }
+
+  static String _getEmojiForType(String type) {
+    switch (type.toLowerCase()) {
+      case 'vocabulary':
+        return '📚';
+      case 'grammar':
+        return '✏️';
+      case 'listening':
+        return '🎧';
+      case 'reading':
+        return '📖';
+      default:
+        return '📝';
+    }
   }
 
   Map<String, dynamic> toMap() {
@@ -51,41 +95,81 @@ class QuizQuestion {
   final String question;
   final List<String> options;
   final int correctAnswerIndex;
+  final String correctAnswer; // Thêm field này cho FillInBlank
+  final String questionType; // Thêm field này
   final String explanation;
   final String difficulty;
   final int points;
+  final bool useTts; // Thêm field cho TTS
+  final String audioText; // Thêm field cho text TTS đọc
 
   QuizQuestion({
     required this.id,
     required this.question,
     required this.options,
     required this.correctAnswerIndex,
+    this.correctAnswer = '',
+    this.questionType = 'MultipleChoice',
     required this.explanation,
     required this.difficulty,
     this.points = 10,
+    this.useTts = false,
+    this.audioText = '',
   });
 
   factory QuizQuestion.fromMap(Map<String, dynamic> map) {
     List<String> options = [];
+
+    // Parse options từ backend
     if (map['options'] != null) {
-      if (map['options'] is String) {
+      // Nếu backend trả về array of objects: [{id, optionText, isCorrect}]
+      if (map['options'] is List) {
+        final optionsList = map['options'] as List;
+        if (optionsList.isNotEmpty && optionsList.first is Map) {
+          options = optionsList
+              .map((opt) => (opt['optionText'] ?? opt['text'] ?? '').toString())
+              .toList();
+        } else {
+          options = List<String>.from(optionsList);
+        }
+      } else if (map['options'] is String) {
         options = (map['options'] as String).split('|');
-      } else if (map['options'] is List) {
-        options = List<String>.from(map['options']);
+      }
+    }
+
+    // Tìm correct answer index từ options array
+    int correctIndex = 0;
+    String correctAnswer = map['correctAnswer'] ?? '';
+
+    if (map['correctAnswerIndex'] != null) {
+      correctIndex = map['correctAnswerIndex'];
+    } else if (map['correct_answer_index'] != null) {
+      correctIndex = map['correct_answer_index'];
+    } else if (map['options'] is List) {
+      // Tìm trong options array
+      final optionsList = map['options'] as List;
+      for (int i = 0; i < optionsList.length; i++) {
+        if (optionsList[i] is Map && optionsList[i]['isCorrect'] == true) {
+          correctIndex = i;
+          break;
+        }
       }
     }
 
     return QuizQuestion(
       id: map['id'] ?? 0,
-      question: map['question'] ?? '',
+      question: map['questionText'] ?? map['question'] ?? '',
       options: options,
-      correctAnswerIndex: map['correct_answer_index'] ?? 0,
+      correctAnswerIndex: correctIndex,
+      correctAnswer: correctAnswer,
+      questionType: map['questionType'] ?? 'MultipleChoice',
       explanation: map['explanation'] ?? '',
       difficulty: map['difficulty'] ?? 'Medium',
       points: map['points'] ?? 10,
+      useTts: map['useTts'] ?? false,
+      audioText: map['audioText'] ?? '',
     );
   }
-
   Map<String, dynamic> toMap() {
     return {
       'id': id,
