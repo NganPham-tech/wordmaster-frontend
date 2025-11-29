@@ -70,10 +70,19 @@ class DictationContent {
           : DateTime.now(),
       // Parse segments
       segments: json['segments'] != null && json['segments'] is List
-          ? (json['segments'] as List)
-              .map((s) => DictationSegment.fromJson(s as Map<String, dynamic>))
-              .toList()
-          : null,
+          ? () {
+              print('🔍 Parsing segments for: ${json['title']}');
+              print('🔍 Raw segments data: ${json['segments']}');
+              final segmentsList = (json['segments'] as List)
+                  .map((s) => DictationSegment.fromJson(s as Map<String, dynamic>))
+                  .toList();
+              print('🔍 Parsed ${segmentsList.length} segments');
+              return segmentsList;
+            }()
+          : () {
+              print('🔍 No segments found for: ${json['title']}');
+              return null;
+            }(),
     );
   }
   

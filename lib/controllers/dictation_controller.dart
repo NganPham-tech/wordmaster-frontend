@@ -87,7 +87,17 @@ class DictationController extends GetxController {
 
       if (response.isNotEmpty) {
         final List<DictationContent> newContent = response
-            .map((json) => DictationContent.fromJson(json))
+            .map((json) {
+              print('📋 Raw JSON for content: ${json['title']}');
+              print('📋 Segments in JSON: ${json['segments']?.length ?? 0} segments');
+              
+              final content = DictationContent.fromJson(json);
+              
+              print('📋 Parsed content - hasSegments: ${content.hasSegments}');
+              print('📋 Parsed content - segments count: ${content.segments?.length ?? 0}');
+              
+              return content;
+            })
             .toList();
 
         if (loadMore) {

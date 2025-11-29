@@ -17,7 +17,6 @@ class _QuizTopicsScreenState extends State<QuizTopicsScreen> {
   @override
   void initState() {
     super.initState();
-    // Sử dụng Get.put với permanent để controller không bị dispose
     _controller = Get.put(QuizController(), permanent: true);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _controller.loadQuizTopics();
@@ -41,84 +40,95 @@ class _QuizTopicsScreenState extends State<QuizTopicsScreen> {
         centerTitle: true,
         iconTheme: const IconThemeData(color: Color(0xFF1E293B)),
       ),
-      body: Obx(() {
-        final ctrl = Get.find<QuizController>();
-        if (ctrl.isLoading.value) {
-          return const Center(child: CircularProgressIndicator());
-        }
+      body: SafeArea(
+        child: Obx(() {
+          final ctrl = Get.find<QuizController>();
+          if (ctrl.isLoading.value) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
-        if (ctrl.error.value != null) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.error_outline, size: 64, color: Colors.grey[400]),
-                const SizedBox(height: 16),
-                Text(
-                  'Oops! Something went wrong',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.grey[600],
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  ctrl.error.value!,
-                  style: TextStyle(fontSize: 14, color: Colors.grey[500]),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 24),
-                ElevatedButton(
-                  onPressed: () => ctrl.loadQuizTopics(),
-                  child: const Text('Try Again'),
-                ),
-              ],
-            ),
-          );
-        }
-
-        if (ctrl.topics.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.quiz_outlined, size: 64, color: Colors.grey[400]),
-                const SizedBox(height: 16),
-                Text(
-                  'No quiz topics available',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.grey[600],
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Check back later for new quizzes!',
-                  style: TextStyle(fontSize: 14, color: Colors.grey[500]),
-                ),
-              ],
-            ),
-          );
-        }
-
-        return Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Choose a topic to start your quiz',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.grey[600],
-                  fontWeight: FontWeight.w500,
+          if (ctrl.error.value != null) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.error_outline, size: 64, color: Colors.grey[400]),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Oops! Something went wrong',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey[600],
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      ctrl.error.value!,
+                      style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 24),
+                    ElevatedButton(
+                      onPressed: () => ctrl.loadQuizTopics(),
+                      child: const Text('Try Again'),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 16),
+            );
+          }
+
+          if (ctrl.topics.isEmpty) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.quiz_outlined, size: 64, color: Colors.grey[400]),
+                    const SizedBox(height: 16),
+                    Text(
+                      'No quiz topics available',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey[600],
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Check back later for new quizzes!',
+                      style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                child: Text(
+                  'Choose a topic to start your quiz',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.grey[600],
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
               Expanded(
                 child: ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   itemCount: ctrl.topics.length,
                   itemBuilder: (context, index) {
                     final topic = ctrl.topics[index];
@@ -130,9 +140,9 @@ class _QuizTopicsScreenState extends State<QuizTopicsScreen> {
                 ),
               ),
             ],
-          ),
-        );
-      }),
+          );
+        }),
+      ),
     );
   }
 
@@ -152,22 +162,23 @@ class QuizTopicCard extends StatelessWidget {
     final ctrl = Get.find<QuizController>();
 
     return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      margin: const EdgeInsets.only(bottom: 12),
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
               Row(
                 children: [
                   Container(
-                    width: 60,
-                    height: 60,
+                    width: 56,
+                    height: 56,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(12),
                       gradient: const LinearGradient(
@@ -182,31 +193,34 @@ class QuizTopicCard extends StatelessWidget {
                       size: 28,
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
                           topic.name,
                           style: const TextStyle(
-                            fontSize: 18,
+                            fontSize: 16,
                             fontWeight: FontWeight.bold,
                           ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 4),
                         Row(
                           children: [
                             Icon(
                               ctrl.getDifficultyIcon(topic.difficulty),
-                              size: 16,
+                              size: 14,
                               color: ctrl.getDifficultyColor(topic.difficulty),
                             ),
                             const SizedBox(width: 4),
                             Text(
                               topic.difficulty,
                               style: TextStyle(
-                                fontSize: 12,
+                                fontSize: 11,
                                 color: ctrl.getDifficultyColor(
                                   topic.difficulty,
                                 ),
@@ -224,20 +238,23 @@ class QuizTopicCard extends StatelessWidget {
               Text(
                 topic.description,
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: 13,
                   color: Colors.grey[600],
                   height: 1.4,
                 ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
-              const SizedBox(height: 16),
-              Row(
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
                 children: [
                   _InfoChip(
                     icon: Icons.quiz,
                     label: '${topic.questionCount} Questions',
                     color: const Color(0xFF6366F1),
                   ),
-                  const SizedBox(width: 8),
                   _InfoChip(
                     icon: Icons.schedule,
                     label: '${topic.estimatedTime.inMinutes} min',
@@ -245,12 +262,17 @@ class QuizTopicCard extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 8,
-                runSpacing: 4,
-                children: topic.tags.map((tag) => _TagChip(tag: tag)).toList(),
-              ),
+              if (topic.tags.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: topic.tags
+                      .take(3) // Limit to 3 tags to avoid overflow
+                      .map((tag) => _TagChip(tag: tag))
+                      .toList(),
+                ),
+              ],
             ],
           ),
         ),
@@ -276,18 +298,18 @@ class _InfoChip extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(color: color.withOpacity(0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: color),
+          Icon(icon, size: 12, color: color),
           const SizedBox(width: 4),
           Text(
             label,
             style: TextStyle(
-              fontSize: 12,
+              fontSize: 11,
               color: color,
               fontWeight: FontWeight.w600,
             ),
@@ -306,16 +328,16 @@ class _TagChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
         color: const Color(0xFF6366F1).withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(color: const Color(0xFF6366F1).withOpacity(0.3)),
       ),
       child: Text(
         tag,
         style: const TextStyle(
-          fontSize: 11,
+          fontSize: 10,
           color: Color(0xFF6366F1),
           fontWeight: FontWeight.w600,
         ),

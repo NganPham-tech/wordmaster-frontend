@@ -1,8 +1,9 @@
-// D:\DemoDACN\wordmaster_dacn\lib\screens\dictation\dictation_segment_screen.dart
+// File: lib/screens/dictation/dictation_segment_screen.dart
+
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '/data/models/dictation_model.dart';
-import 'widgets/real_audio_player.dart';
+import 'widgets/segment_audio_player.dart'; // 🆕 IMPORT
 
 class DictationSegmentScreen extends StatefulWidget {
   final DictationContent content;
@@ -22,9 +23,6 @@ class _DictationSegmentScreenState extends State<DictationSegmentScreen>
   final List<TextEditingController> _segmentControllers = [];
   final List<bool> _segmentChecked = [];
   final List<String?> _segmentFeedback = [];
-  bool _isPlaying = false;
-  double _currentPosition = 0;
-  Timer? _playbackTimer;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
 
@@ -41,7 +39,7 @@ class _DictationSegmentScreenState extends State<DictationSegmentScreen>
     );
     _animationController.forward();
     
-    // Initialize controllers and state for each segment
+    // Initialize controllers
     if (widget.content.segments != null) {
       for (int i = 0; i < widget.content.segments!.length; i++) {
         _segmentControllers.add(TextEditingController());
@@ -56,42 +54,8 @@ class _DictationSegmentScreenState extends State<DictationSegmentScreen>
     for (var controller in _segmentControllers) {
       controller.dispose();
     }
-    _playbackTimer?.cancel();
     _animationController.dispose();
     super.dispose();
-  }
-
-  void _togglePlayPause() {
-    setState(() {
-      _isPlaying = !_isPlaying;
-    });
-    
-    if (_isPlaying) {
-      _startPlayback();
-    } else {
-      _pausePlayback();
-    }
-  }
-
-  void _startPlayback() {
-    final currentSegment = widget.content.segments![_currentSegmentIndex];
-    _currentPosition = currentSegment.startTime.toDouble();
-    
-    _playbackTimer?.cancel();
-    _playbackTimer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
-      setState(() {
-        _currentPosition += 0.1;
-        if (_currentPosition >= currentSegment.endTime) {
-          _currentPosition = currentSegment.endTime;
-          _isPlaying = false;
-          timer.cancel();
-        }
-      });
-    });
-  }
-
-  void _pausePlayback() {
-    _playbackTimer?.cancel();
   }
 
   void _checkAnswer(int segmentIndex) {
@@ -99,7 +63,7 @@ class _DictationSegmentScreenState extends State<DictationSegmentScreen>
     if (controller.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Please type what you hear'),
+          content: Text('Vui lòng nhập câu bạn nghe được'),
           backgroundColor: Color(0xFFF59E0B),
         ),
       );
@@ -127,11 +91,11 @@ class _DictationSegmentScreenState extends State<DictationSegmentScreen>
       _segmentChecked[segmentIndex] = true;
       
       if (accuracy >= 80) {
-        _segmentFeedback[segmentIndex] = 'Great job! ${accuracy.toStringAsFixed(0)}% accurate';
+        _segmentFeedback[segmentIndex] = 'Xuất sắc! ${accuracy.toStringAsFixed(0)}% chính xác';
       } else if (accuracy >= 60) {
-        _segmentFeedback[segmentIndex] = 'Good try! ${accuracy.toStringAsFixed(0)}% accurate';
+        _segmentFeedback[segmentIndex] = 'Tốt lắm! ${accuracy.toStringAsFixed(0)}% chính xác';
       } else {
-        _segmentFeedback[segmentIndex] = 'Keep practicing! ${accuracy.toStringAsFixed(0)}% accurate';
+        _segmentFeedback[segmentIndex] = 'Cần luyện tập thêm! ${accuracy.toStringAsFixed(0)}% chính xác';
       }
     });
     
@@ -143,8 +107,6 @@ class _DictationSegmentScreenState extends State<DictationSegmentScreen>
     if (_currentSegmentIndex < widget.content.segments!.length - 1) {
       setState(() {
         _currentSegmentIndex++;
-        _currentPosition = widget.content.segments![_currentSegmentIndex].startTime.toDouble();
-        _isPlaying = false;
       });
       _animationController.reset();
       _animationController.forward();
@@ -157,8 +119,6 @@ class _DictationSegmentScreenState extends State<DictationSegmentScreen>
     if (_currentSegmentIndex > 0) {
       setState(() {
         _currentSegmentIndex--;
-        _currentPosition = widget.content.segments![_currentSegmentIndex].startTime.toDouble();
-        _isPlaying = false;
       });
       _animationController.reset();
       _animationController.forward();
@@ -173,15 +133,15 @@ class _DictationSegmentScreenState extends State<DictationSegmentScreen>
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: const Text('Segment Practice Complete! 🎉'),
+        title: const Text('Hoàn Thành! 🎉'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('You completed $completedSegments out of $totalSegments segments.'),
+            Text('Bạn đã hoàn thành $completedSegments/$totalSegments câu.'),
             const SizedBox(height: 16),
             const Text(
-              'Great job practicing sentence by sentence! This helps build listening accuracy.',
+              'Rất tốt! Hãy tiếp tục luyện tập để cải thiện kỹ năng nghe.',
               style: TextStyle(fontSize: 14, color: Colors.grey),
             ),
           ],
@@ -190,14 +150,11 @@ class _DictationSegmentScreenState extends State<DictationSegmentScreen>
           TextButton(
             onPressed: () {
               Navigator.pop(context);
-              // Reset to first segment
               setState(() {
                 _currentSegmentIndex = 0;
-                _currentPosition = widget.content.segments![0].startTime.toDouble();
-                _isPlaying = false;
               });
             },
-            child: const Text('Practice Again'),
+            child: const Text('Luyện Lại'),
           ),
           ElevatedButton(
             onPressed: () {
@@ -207,7 +164,7 @@ class _DictationSegmentScreenState extends State<DictationSegmentScreen>
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF6366F1),
             ),
-            child: const Text('Finish', style: TextStyle(color: Colors.white)),
+            child: const Text('Hoàn Thành', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -228,10 +185,10 @@ class _DictationSegmentScreenState extends State<DictationSegmentScreen>
     if (segments == null || segments.isEmpty) {
       return Scaffold(
         appBar: AppBar(
-          title: const Text('Sentence by Sentence'),
+          title: const Text('Học Từng Câu'),
         ),
         body: const Center(
-          child: Text('No segments available for this content'),
+          child: Text('Nội dung này chưa có phân đoạn'),
         ),
       );
     }
@@ -240,11 +197,32 @@ class _DictationSegmentScreenState extends State<DictationSegmentScreen>
     final isChecked = _segmentChecked[_currentSegmentIndex];
     final feedback = _segmentFeedback[_currentSegmentIndex];
 
+    // 🔥 CHECK AUDIO URL
+    if (widget.content.audioURL == null) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Học Từng Câu'),
+        ),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.warning_amber, size: 64, color: Colors.orange),
+              const SizedBox(height: 16),
+              const Text('Không tìm thấy file audio'),
+              const SizedBox(height: 8),
+              Text('Audio path: ${widget.content.audioPath ?? "null"}'),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         title: Text(
-          'Sentence ${_currentSegmentIndex + 1} of ${segments.length}',
+          'Câu ${_currentSegmentIndex + 1}/${segments.length}',
           style: const TextStyle(
             fontSize: 18,
             color: Color(0xFF1E293B),
@@ -279,96 +257,15 @@ class _DictationSegmentScreenState extends State<DictationSegmentScreen>
       ),
       body: Column(
         children: [
-          // Segment Player Bar
-          Container(
+          // 🆕 SEGMENT AUDIO PLAYER
+          Padding(
             padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Column(
-              children: [
-                // Time Display
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      '${currentSegment.startTime.toStringAsFixed(1)}s',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey,
-                      ),
-                    ),
-                    Text(
-                      '${currentSegment.endTime.toStringAsFixed(1)}s',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                // Progress Bar
-                Container(
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[200],
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(2),
-                    child: LinearProgressIndicator(
-                      value: (_currentPosition - currentSegment.startTime) / 
-                            (currentSegment.endTime - currentSegment.startTime),
-                      backgroundColor: Colors.transparent,
-                      valueColor: const AlwaysStoppedAnimation<Color>(
-                        Color(0xFF6366F1),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                // Player Controls
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.skip_previous),
-                      onPressed: _currentSegmentIndex > 0 ? _previousSegment : null,
-                      color: const Color(0xFF6366F1),
-                    ),
-                    Container(
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
-                        ),
-                        shape: BoxShape.circle,
-                      ),
-                      child: IconButton(
-                        icon: Icon(
-                          _isPlaying ? Icons.pause : Icons.play_arrow,
-                          color: Colors.white,
-                        ),
-                        onPressed: _togglePlayPause,
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.skip_next),
-                      onPressed: _currentSegmentIndex < segments.length - 1 
-                          ? _nextSegment 
-                          : null,
-                      color: const Color(0xFF6366F1),
-                    ),
-                  ],
-                ),
-              ],
+            child: SegmentAudioPlayer(
+              audioUrl: widget.content.audioURL!,
+              segment: currentSegment,
+              onSegmentComplete: () {
+                print('Segment playback completed');
+              },
             ),
           ),
           
@@ -398,7 +295,7 @@ class _DictationSegmentScreenState extends State<DictationSegmentScreen>
                         ),
                       ),
                     ),
-                    const SizedBox(height: 40),
+                    const SizedBox(height: 32),
                     
                     // Instruction Card
                     Container(
@@ -418,13 +315,13 @@ class _DictationSegmentScreenState extends State<DictationSegmentScreen>
                       child: Column(
                         children: [
                           Icon(
-                            Icons.format_list_numbered,
+                            Icons.hearing,
                             size: 48,
                             color: const Color(0xFF6366F1).withOpacity(0.8),
                           ),
                           const SizedBox(height: 12),
                           const Text(
-                            'Listen to this sentence and type what you hear',
+                            'Nghe câu này và gõ lại chính xác',
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
@@ -434,7 +331,7 @@ class _DictationSegmentScreenState extends State<DictationSegmentScreen>
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            'Focus on accuracy for each individual sentence',
+                            'Bạn có thể nghe lại nhiều lần',
                             style: TextStyle(
                               fontSize: 14,
                               color: Colors.grey[600],
@@ -443,7 +340,7 @@ class _DictationSegmentScreenState extends State<DictationSegmentScreen>
                         ],
                       ),
                     ),
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 24),
                     
                     // Input Field
                     Container(
@@ -452,7 +349,7 @@ class _DictationSegmentScreenState extends State<DictationSegmentScreen>
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
                           color: isChecked 
-                              ? (feedback?.contains('Great') ?? false
+                              ? (feedback?.contains('Xuất sắc') ?? false
                                   ? const Color(0xFF10B981)
                                   : const Color(0xFFF59E0B))
                               : Colors.grey[300]!,
@@ -476,7 +373,7 @@ class _DictationSegmentScreenState extends State<DictationSegmentScreen>
                           height: 1.5,
                         ),
                         decoration: InputDecoration(
-                          hintText: 'Type this sentence...',
+                          hintText: 'Gõ câu bạn nghe được...',
                           hintStyle: TextStyle(
                             color: Colors.grey[400],
                             fontSize: 16,
@@ -493,12 +390,12 @@ class _DictationSegmentScreenState extends State<DictationSegmentScreen>
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: feedback.contains('Great')
+                          color: feedback.contains('Xuất sắc')
                               ? const Color(0xFFD1FAE5)
                               : const Color(0xFFFEF3C7),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: feedback.contains('Great')
+                            color: feedback.contains('Xuất sắc')
                                 ? const Color(0xFF10B981)
                                 : const Color(0xFFF59E0B),
                           ),
@@ -508,10 +405,10 @@ class _DictationSegmentScreenState extends State<DictationSegmentScreen>
                             Row(
                               children: [
                                 Icon(
-                                  feedback.contains('Great')
+                                  feedback.contains('Xuất sắc')
                                       ? Icons.check_circle
                                       : Icons.info_outline,
-                                  color: feedback.contains('Great')
+                                  color: feedback.contains('Xuất sắc')
                                       ? const Color(0xFF10B981)
                                       : const Color(0xFFF59E0B),
                                   size: 24,
@@ -521,7 +418,7 @@ class _DictationSegmentScreenState extends State<DictationSegmentScreen>
                                   child: Text(
                                     feedback,
                                     style: TextStyle(
-                                      color: feedback.contains('Great')
+                                      color: feedback.contains('Xuất sắc')
                                           ? const Color(0xFF065F46)
                                           : const Color(0xFF92400E),
                                       fontSize: 16,
@@ -543,7 +440,7 @@ class _DictationSegmentScreenState extends State<DictationSegmentScreen>
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   const Text(
-                                    'Correct sentence:',
+                                    'Câu đúng:',
                                     style: TextStyle(
                                       fontSize: 12,
                                       color: Colors.grey,
@@ -605,7 +502,7 @@ class _DictationSegmentScreenState extends State<DictationSegmentScreen>
                           Icon(Icons.check, color: Colors.white, size: 20),
                           SizedBox(width: 8),
                           Text(
-                            'Check Answer',
+                            'Kiểm Tra',
                             style: TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.w600,
@@ -636,7 +533,7 @@ class _DictationSegmentScreenState extends State<DictationSegmentScreen>
                           Icon(Icons.refresh, color: Color(0xFF6366F1), size: 20),
                           SizedBox(width: 8),
                           Text(
-                            'Try Again',
+                            'Thử Lại',
                             style: TextStyle(
                               color: Color(0xFF6366F1),
                               fontWeight: FontWeight.w600,
@@ -664,8 +561,8 @@ class _DictationSegmentScreenState extends State<DictationSegmentScreen>
                         children: [
                           Text(
                             _currentSegmentIndex < segments.length - 1
-                                ? 'Next Sentence'
-                                : 'Finish',
+                                ? 'Câu Tiếp'
+                                : 'Hoàn Thành',
                             style: const TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.w600,

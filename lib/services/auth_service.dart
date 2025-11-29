@@ -269,4 +269,8 @@ class AuthService extends GetxController {
   int get userStreak {
     return currentUser.value?['currentStreak'] ?? 0;
   }
+  
+  int get userId {
+    return currentUser.value?['id'] ?? 0;
+  }
 }

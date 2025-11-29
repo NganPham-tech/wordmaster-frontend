@@ -6,6 +6,7 @@ import 'package:get_storage/get_storage.dart';
 import 'core/theme/app_theme.dart';
 import 'services/api_service.dart';
 import 'services/auth_service.dart'; // ← Thêm import này
+import 'services/user_service.dart'; // ← Thêm import này
 import 'bindings/flashcard_binding.dart';
 import 'screens/main_scaffold.dart';
 
@@ -21,7 +22,7 @@ void main() async {
   // Initialize services
   Get.put(ApiService.instance);
   Get.put(AuthService()); // ← Thêm dòng này để khởi tạo AuthService
-  
+  Get.put(UserService());
   runApp(const WordMasterApp());
 }
 
