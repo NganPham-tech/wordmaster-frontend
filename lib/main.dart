@@ -8,7 +8,6 @@ import 'services/api_service.dart';
 import 'services/auth_service.dart'; // ← Thêm import này
 import 'bindings/flashcard_binding.dart';
 import 'screens/main_scaffold.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
