@@ -59,7 +59,18 @@ class FlashcardIndexScreen extends StatelessWidget {
                           end: Alignment.bottomRight,
                           colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
                         ),
-                        emoji: '📘',
+                        iconWidget: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: const Icon(
+                            Icons.auto_stories,
+                            color: Colors.white,
+                            size: 32,
+                          ),
+                        ),
                         onTap: () {
                           HapticFeedback.mediumImpact();
                           Navigator.push(
@@ -83,7 +94,18 @@ class FlashcardIndexScreen extends StatelessWidget {
                           end: Alignment.bottomRight,
                           colors: [Color(0xFF10B981), Color(0xFF059669)],
                         ),
-                        emoji: '📗',
+                        iconWidget: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: const Icon(
+                            Icons.menu_book,
+                            color: Colors.white,
+                            size: 32,
+                          ),
+                        ),
                         onTap: () {
                           HapticFeedback.mediumImpact();
                           Navigator.push(
@@ -111,7 +133,7 @@ class FlashcardIndexScreen extends StatelessWidget {
     required String title,
     required String subtitle,
     required Gradient gradient,
-    required String emoji,
+    required Widget iconWidget,
     required VoidCallback onTap,
   }) {
     return GestureDetector(
@@ -163,10 +185,7 @@ class FlashcardIndexScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(
-                    emoji,
-                    style: const TextStyle(fontSize: 48),
-                  ),
+                  iconWidget,
                   const SizedBox(height: 16),
                   Text(
                     title,

@@ -268,7 +268,7 @@ class QuizTopicCard extends StatelessWidget {
                   spacing: 6,
                   runSpacing: 6,
                   children: topic.tags
-                      .take(3) // Limit to 3 tags to avoid overflow
+                      .take(3) 
                       .map((tag) => _TagChip(tag: tag))
                       .toList(),
                 ),

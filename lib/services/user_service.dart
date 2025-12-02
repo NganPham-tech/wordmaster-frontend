@@ -30,9 +30,9 @@ class UserService extends GetxService {
             currentStreak: data['currentStreak'] ?? 0,
             longestStreak: data['longestStreak'] ?? 0,
             totalPoints: data['totalPoints'] ?? 0,
-            totalCardsLearned: 0, // Sẽ lấy từ stats
-            totalQuizzesCompleted: 0, // Sẽ lấy từ stats
-            averageAccuracy: 0.0, // Sẽ lấy từ stats
+            totalCardsLearned: 0,
+            totalQuizzesCompleted: 0, 
+            averageAccuracy: 0.0,
             bio: null,
           );
         }

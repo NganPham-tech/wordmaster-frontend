@@ -60,7 +60,18 @@ class QuizIndexScreen extends StatelessWidget {
                           end: Alignment.bottomRight,
                           colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
                         ),
-                        emoji: '🎯',
+                        iconWidget: Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: const Icon(
+                            Icons.quiz,
+                            color: Colors.white,
+                            size: 28,
+                          ),
+                        ),
                         stats: 'Có sẵn nhiều chủ đề',
                         onTap: () {
                           HapticFeedback.mediumImpact();
@@ -78,7 +89,18 @@ class QuizIndexScreen extends StatelessWidget {
                           end: Alignment.bottomRight,
                           colors: [Color(0xFFF59E0B), Color(0xFFEF4444)],
                         ),
-                        emoji: '🏆',
+                        iconWidget: Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: const Icon(
+                            Icons.emoji_events,
+                            color: Colors.white,
+                            size: 28,
+                          ),
+                        ),
                         stats: 'Coming soon',
                         onTap: () {
                           HapticFeedback.mediumImpact();
@@ -107,7 +129,7 @@ class QuizIndexScreen extends StatelessWidget {
     required String title,
     required String subtitle,
     required Gradient gradient,
-    required String emoji,
+    required Widget iconWidget,
     required String stats,
     required VoidCallback onTap,
   }) {
@@ -169,10 +191,7 @@ class QuizIndexScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(
-                        emoji,
-                        style: const TextStyle(fontSize: 40),
-                      ),
+                      iconWidget,
                       const SizedBox(height: 12),
                       Text(
                         title,

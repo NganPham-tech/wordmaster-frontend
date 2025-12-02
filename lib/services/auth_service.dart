@@ -217,7 +217,7 @@ class AuthService extends GetxController {
   Future<void> logout() async {
     isLoading.value = true;
     
-    // Sign out from Google
+
     try {
       final bool isSignedIn = await _googleSignIn.isSignedIn();
       if (isSignedIn) {
@@ -228,11 +228,11 @@ class AuthService extends GetxController {
       print('Google sign out error: $e');
     }
     
-    // Clear local storage
+
     await _storage.remove('auth_token');
     await _storage.remove('current_user');
     
-    // Reset state
+ 
     token.value = null;
     currentUser.value = null;
     isLoggedIn.value = false;
@@ -240,7 +240,7 @@ class AuthService extends GetxController {
     isLoading.value = false;
   }
   
-  // Getters
+
   String get userName {
     if (currentUser.value != null) {
       final firstName = currentUser.value!['firstName'] ?? '';

@@ -138,7 +138,7 @@ class _SegmentAudioPlayerState extends State<SegmentAudioPlayer> {
         await _audioPlayer.resume();
       }
     } catch (e) {
-      print('🎵 Playback error: $e');
+      print('Playback error: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Lỗi phát audio: $e'),

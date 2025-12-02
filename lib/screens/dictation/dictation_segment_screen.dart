@@ -2,8 +2,10 @@
 
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import '/data/models/dictation_model.dart';
-import 'widgets/segment_audio_player.dart'; // 🆕 IMPORT
+import '/controllers/session_controller.dart';
+import 'widgets/segment_audio_player.dart';
 
 class DictationSegmentScreen extends StatefulWidget {
   final DictationContent content;
@@ -25,6 +27,7 @@ class _DictationSegmentScreenState extends State<DictationSegmentScreen>
   final List<String?> _segmentFeedback = [];
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
+  final sessionController = Get.put(SessionController());
 
   @override
   void initState() {
@@ -39,6 +42,9 @@ class _DictationSegmentScreenState extends State<DictationSegmentScreen>
     );
     _animationController.forward();
     
+    // Start dictation session
+    _startSession();
+    
     // Initialize controllers
     if (widget.content.segments != null) {
       for (int i = 0; i < widget.content.segments!.length; i++) {
@@ -47,6 +53,16 @@ class _DictationSegmentScreenState extends State<DictationSegmentScreen>
         _segmentFeedback.add(null);
       }
     }
+  }
+
+  void _startSession() {
+    sessionController.startSession(
+      contentType: 'Dictation',
+      contentId: int.parse(widget.content.id),
+      contentTitle: widget.content.title,
+      mode: 'Segment Practice',
+      totalItems: widget.content.segments?.length ?? 1,
+    );
   }
 
   @override

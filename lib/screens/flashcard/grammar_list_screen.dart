@@ -96,14 +96,14 @@ class GrammarListScreen extends StatelessWidget {
   }
 
   Widget _buildTopicCard(dynamic deck, Color color) {
-    // Map emoji based on deck name or use default
-    String emoji = '📗';
-    if (deck.name.toLowerCase().contains('tense')) emoji = '⏰';
-    if (deck.name.toLowerCase().contains('passive')) emoji = '🔄';
-    if (deck.name.toLowerCase().contains('report')) emoji = '💬';
-    if (deck.name.toLowerCase().contains('conditional')) emoji = '🤔';
-    if (deck.name.toLowerCase().contains('modal')) emoji = '🎯';
-    if (deck.name.toLowerCase().contains('relative')) emoji = '🔗';
+    // Map icon based on deck name or use default
+    IconData iconData = Icons.menu_book;
+    if (deck.name.toLowerCase().contains('tense')) iconData = Icons.schedule;
+    if (deck.name.toLowerCase().contains('passive')) iconData = Icons.sync;
+    if (deck.name.toLowerCase().contains('report')) iconData = Icons.chat_bubble;
+    if (deck.name.toLowerCase().contains('conditional')) iconData = Icons.help;
+    if (deck.name.toLowerCase().contains('modal')) iconData = Icons.track_changes;
+    if (deck.name.toLowerCase().contains('relative')) iconData = Icons.link;
 
     return GestureDetector(
       onTap: () {
@@ -138,11 +138,10 @@ class GrammarListScreen extends StatelessWidget {
                 color: color.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(16),
               ),
-              child: Center(
-                child: Text(
-                  emoji,
-                  style: const TextStyle(fontSize: 32),
-                ),
+              child: Icon(
+                iconData,
+                color: color,
+                size: 32,
               ),
             ),
             

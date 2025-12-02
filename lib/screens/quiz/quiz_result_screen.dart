@@ -28,7 +28,7 @@ class QuizResultScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            // Score display
+            
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(24),

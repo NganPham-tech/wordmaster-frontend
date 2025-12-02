@@ -1,3 +1,4 @@
+// lib/screens/flashcard/study_vocab_screen.dart
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -5,6 +6,7 @@ import 'package:get/get.dart';
 import '../../controllers/flashcard_controller.dart';
 import '../../services/tts_service.dart';
 import 'result_screen.dart';
+import '../../controllers/session_controller.dart';
 
 class StudyVocabScreen extends StatefulWidget {
   final int deckId;
@@ -27,7 +29,8 @@ class _StudyVocabScreenState extends State<StudyVocabScreen>
   final RxBool _isFlipped = false.obs;
 
   late FlashcardController flashcardController;
-
+  final sessionController = Get.put(SessionController());
+  
   @override
   void initState() {
     super.initState();
@@ -48,11 +51,31 @@ class _StudyVocabScreenState extends State<StudyVocabScreen>
     _animation = Tween<double>(begin: 0, end: 1).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
     );
+    
+    // 🆕 START SESSION
+    _initializeSession();
   }
-
+  
+  // 🆕 INITIALIZE SESSION
+  Future<void> _initializeSession() async {
+    // Đợi cards load xong
+    await Future.delayed(const Duration(milliseconds: 500));
+    
+    if (flashcardController.flashcards.isNotEmpty) {
+      await sessionController.startSession(
+        contentType: 'Flashcard',
+        contentId: widget.deckId,
+        contentTitle: widget.deckName,
+        mode: 'Learn',
+        totalItems: flashcardController.flashcards.length,
+      );
+    }
+  }
+  
   @override
   void dispose() {
     _controller.dispose();
+    TtsService.stop();
     super.dispose();
   }
 
@@ -78,6 +101,13 @@ class _StudyVocabScreenState extends State<StudyVocabScreen>
     final isLastCard = flashcardController.currentIndex.value >= 
         flashcardController.flashcards.length - 1;
 
+    // 🆕 UPDATE SESSION - thêm điểm nếu biết từ
+    if (known) {
+      sessionController.incrementCompleted(scoreIncrement: 10.0);
+    } else {
+      sessionController.incrementCompleted(scoreIncrement: 0);
+    }
+
     if (isLastCard) {
       _showCompletionDialog();
     } else {
@@ -87,7 +117,10 @@ class _StudyVocabScreenState extends State<StudyVocabScreen>
     }
   }
 
-  void _showCompletionDialog() {
+  void _showCompletionDialog() async {
+    // 🆕 COMPLETE SESSION
+    await sessionController.completeSession();
+    
     Get.dialog(
       AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -137,6 +170,34 @@ class _StudyVocabScreenState extends State<StudyVocabScreen>
                 ),
               ],
             ),
+            // 🆕 HIỂN THỊ ĐIỂM
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                ),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                children: [
+                  const Text(
+                    'Điểm đạt được',
+                    style: TextStyle(color: Colors.white70, fontSize: 12),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${sessionController.currentScore.toInt()} XP',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
         )),
         actions: [
@@ -144,6 +205,7 @@ class _StudyVocabScreenState extends State<StudyVocabScreen>
             onPressed: () {
               Get.back(); // Close dialog
               Get.back(); // Back to list
+              sessionController.endSession(); // 🆕 END SESSION
             },
             child: const Text('Về danh sách'),
           ),
@@ -157,11 +219,12 @@ class _StudyVocabScreenState extends State<StudyVocabScreen>
                 unknownCards: flashcardController.unknownCount.value,
                 type: 'vocabulary',
               ));
+              sessionController.endSession(); // 🆕 END SESSION
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF6366F1),
             ),
-            child: const Text('Xem kết quả'),
+            child: const Text('Xem kết quả', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -174,13 +237,27 @@ class _StudyVocabScreenState extends State<StudyVocabScreen>
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: Text(
-          'Đang học: ${widget.deckName}',
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF1E293B),
-            fontSize: 18,
-          ),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Đang học: ${widget.deckName}',
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF1E293B),
+                fontSize: 16,
+              ),
+            ),
+            // 🆕 HIỂN THỊ ĐIỂM REAL-TIME
+            Obx(() => Text(
+              '${sessionController.currentScore.toInt()} XP',
+              style: const TextStyle(
+                fontSize: 12,
+                color: Color(0xFF6366F1),
+                fontWeight: FontWeight.w600,
+              ),
+            )),
+          ],
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -191,16 +268,19 @@ class _StudyVocabScreenState extends State<StudyVocabScreen>
               Get.dialog(
                 AlertDialog(
                   title: const Text('Kết thúc học?'),
-                  content: const Text('Tiến độ của bạn sẽ không được lưu.'),
+                  content: const Text('Tiến độ của bạn sẽ được lưu lại.'), // 🆕 UPDATED
                   actions: [
                     TextButton(
                       onPressed: () => Get.back(),
                       child: const Text('Ở lại'),
                     ),
                     TextButton(
-                      onPressed: () {
+                      onPressed: () async {
+                        // 🆕 COMPLETE SESSION khi thoát giữa chừng
+                        await sessionController.completeSession();
                         Get.back(); // Close dialog
                         Get.back(); // Back to list
+                        sessionController.endSession();
                       },
                       child: const Text(
                         'Kết thúc',
@@ -478,14 +558,18 @@ class _StudyVocabScreenState extends State<StudyVocabScreen>
               ),
             ),
             const SizedBox(height: 20),
-            Text(
-              card.question,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 48,
-                fontWeight: FontWeight.bold,
+            Flexible(
+              child: Text(
+                card.question,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 48,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+                overflow: TextOverflow.ellipsis,
+                maxLines: 3,
               ),
-              textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
             // Speaker button on front
