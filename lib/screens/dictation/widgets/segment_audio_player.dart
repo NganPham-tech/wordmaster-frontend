@@ -48,6 +48,9 @@ class _SegmentAudioPlayerState extends State<SegmentAudioPlayer> {
   }
 
   void _updateSegment() {
+    // Stop current playback first
+    _audioPlayer.pause();
+    
     // Recalculate segment times
     _segmentStart = Duration(milliseconds: (widget.segment.startTime * 1000).toInt());
     _segmentEnd = Duration(milliseconds: (widget.segment.endTime * 1000).toInt());
@@ -55,16 +58,11 @@ class _SegmentAudioPlayerState extends State<SegmentAudioPlayer> {
 
     print('🎵 Updated to Segment ${widget.segment.orderIndex}: ${_segmentStart.inSeconds}s - ${_segmentEnd.inSeconds}s');
 
-    // Reset position
+    // Reset state completely
     setState(() {
       _currentPosition = Duration.zero;
       _isPlaying = false;
     });
-
-    // Stop current playback if any
-    if (_isPlaying) {
-      _audioPlayer.pause();
-    }
   }
 
   void _initPlayer() {
@@ -77,15 +75,18 @@ class _SegmentAudioPlayerState extends State<SegmentAudioPlayer> {
 
     // Listen to position changes
     _audioPlayer.onPositionChanged.listen((position) {
-      // Only update if within segment bounds
+      // Only process if we're currently playing
+      if (!_isPlaying) return;
+      
+      // Check if we're within segment bounds
       if (position >= _segmentStart && position <= _segmentEnd) {
         setState(() {
           _currentPosition = position - _segmentStart;
         });
       }
 
-      // Auto-stop when reaching segment end
-      if (position >= _segmentEnd && _isPlaying) {
+      // Auto-stop when reaching segment end (with small buffer for precision)
+      if (position >= _segmentEnd - const Duration(milliseconds: 100) && _isPlaying) {
         print('🎵 Segment completed at position: ${position.inSeconds}s');
         _stopPlayback();
         widget.onSegmentComplete?.call();
@@ -131,14 +132,19 @@ class _SegmentAudioPlayerState extends State<SegmentAudioPlayer> {
       } else {
         if (!_isAudioLoaded) {
           await _loadAudio();
+          // Wait a bit for audio to load
+          await Future.delayed(const Duration(milliseconds: 500));
         }
         
         print('🎵 Seeking to: ${_segmentStart.inSeconds}s');
         await _audioPlayer.seek(_segmentStart);
-        await _audioPlayer.resume();
+        
+        // Use play with UrlSource instead of resume to ensure proper playback
+        await _audioPlayer.play(UrlSource(widget.audioUrl));
+        await _audioPlayer.seek(_segmentStart); // Seek again after play to ensure correct position
       }
     } catch (e) {
-      print('Playback error: $e');
+      print('🎵 Playback error: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Lỗi phát audio: $e'),
@@ -158,7 +164,13 @@ class _SegmentAudioPlayerState extends State<SegmentAudioPlayer> {
 
   Future<void> _replaySegment() async {
     await _stopPlayback();
-    await Future.delayed(const Duration(milliseconds: 200));
+    await Future.delayed(const Duration(milliseconds: 300));
+    
+    // Ensure we start from segment beginning
+    setState(() {
+      _currentPosition = Duration.zero;
+    });
+    
     await _togglePlayPause();
   }
 

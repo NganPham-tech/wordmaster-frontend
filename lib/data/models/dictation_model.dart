@@ -1,3 +1,5 @@
+// File: lib/data/models/dictation_model.dart
+
 class DictationContent {
   final String id;
   final String title;
@@ -5,7 +7,7 @@ class DictationContent {
   final String sourceType;
   final String sourceURL;
   final String? thumbnail;
-  final String? audioPath;
+  final String? audioPath;  // Filename from DB
   final String transcript;
   final int duration;
   final String difficulty;
@@ -14,7 +16,7 @@ class DictationContent {
   final int viewCount;
   final int? wordCount;
   final DateTime createdAt;
-  final List<DictationSegment>? segments; // 🆕 THÊM SEGMENTS
+  final List<DictationSegment>? segments;
 
   DictationContent({
     required this.id,
@@ -32,11 +34,10 @@ class DictationContent {
     required this.viewCount,
     this.wordCount,
     required this.createdAt,
-    this.segments, // 🆕
+    this.segments,
   });
 
   factory DictationContent.fromJson(Map<String, dynamic> json) {
-    // Parse tags - can be string or null
     List<String> parseTags() {
       if (json['tags'] == null) return [];
       if (json['tags'] is String) {
@@ -50,6 +51,22 @@ class DictationContent {
       return [];
     }
 
+    // 🆕 Parse segments with detailed logging
+    List<DictationSegment>? parseSegments() {
+      if (json['segments'] == null || json['segments'] is! List) {
+        print('📋 No segments for: ${json['title']}');
+        return null;
+      }
+      
+      final segmentsList = (json['segments'] as List)
+          .map((s) => DictationSegment.fromJson(s as Map<String, dynamic>))
+          .toList();
+      
+      print('📋 Parsed ${segmentsList.length} segments for: ${json['title']}');
+      
+      return segmentsList.isEmpty ? null : segmentsList;
+    }
+
     return DictationContent(
       id: json['id'].toString(),
       title: json['title'] ?? '',
@@ -57,9 +74,11 @@ class DictationContent {
       sourceType: json['sourceType'] ?? 'Unknown',
       sourceURL: json['sourceURL'] ?? '',
       thumbnail: json['thumbnail'],
-      audioPath: json['audioPath'],
+      audioPath: json['audioPath'],  // Just filename from DB
       transcript: json['transcript'] ?? '',
-      duration: (json['duration'] is int) ? json['duration'] : (json['duration'] is double ? json['duration'].toInt() : 0),
+      duration: (json['duration'] is int) 
+          ? json['duration'] 
+          : (json['duration'] is double ? json['duration'].toInt() : 0),
       difficulty: json['difficulty'] ?? 'Intermediate',
       accentType: json['accentType'],
       tags: parseTags(),
@@ -68,42 +87,20 @@ class DictationContent {
       createdAt: json['createdAt'] != null 
           ? DateTime.parse(json['createdAt']) 
           : DateTime.now(),
-      // Parse segments
-      segments: json['segments'] != null && json['segments'] is List
-          ? () {
-              print('🔍 Parsing segments for: ${json['title']}');
-              print('🔍 Raw segments data: ${json['segments']}');
-              final segmentsList = (json['segments'] as List)
-                  .map((s) => DictationSegment.fromJson(s as Map<String, dynamic>))
-                  .toList();
-              print('🔍 Parsed ${segmentsList.length} segments');
-              return segmentsList;
-            }()
-          : () {
-              print('🔍 No segments found for: ${json['title']}');
-              return null;
-            }(),
+      segments: parseSegments(),
     );
   }
   
-  // Get audio URL - fallback to YouTube if no audio file
+  // ✅ FIXED: Get full audio URL from backend
   String? get audioURL {
-    print('Debug - audioPath: $audioPath');
-    print('Debug - sourceURL: $sourceURL');
-    
-    if (audioPath != null) {
-      final url = 'http://10.0.2.2:3000/uploads/dictation/$audioPath';
-      print('Debug - generated audioURL: $url');
-      return url;
+    // Backend sends full URL in 'audioURL' field
+    if (audioPath != null && audioPath!.isNotEmpty) {
+      // audioPath is just filename like "audio-xxx.mp3"
+      // Build full URL for Android Emulator
+      return 'http://10.0.2.2:3000/uploads/dictation/$audioPath';
     }
     
-    // Fallback to YouTube URL (won't work in audioplayers but shows the issue)
-    if (sourceURL.contains('youtube.com') || sourceURL.contains('youtu.be')) {
-      print('Debug - using YouTube URL as fallback: $sourceURL');
-      return sourceURL;
-    }
-    
-    print('Debug - no audio URL available');
+    // No audio available
     return null;
   }
 
@@ -113,17 +110,15 @@ class DictationContent {
     return '$minutes:${seconds.toString().padLeft(2, '0')}';
   }
   
-  // Calculate word count from transcript if not provided
   int get effectiveWordCount {
     if (wordCount != null) return wordCount!;
     return transcript.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).length;
   }
   
-  // 🆕 Check if has segments for mode selection
+  // ✅ Check if has segments
   bool get hasSegments => segments != null && segments!.isNotEmpty;
 }
 
-// 🆕 THÊM MODEL MỚI
 class DictationSegment {
   final int id;
   final int orderIndex;
@@ -150,4 +145,16 @@ class DictationSegment {
   }
 
   double get duration => endTime - startTime;
+  
+  String get timeFormatted {
+    final start = _formatTime(startTime);
+    final end = _formatTime(endTime);
+    return '$start - $end';
+  }
+  
+  String _formatTime(double seconds) {
+    final mins = (seconds ~/ 60).toString().padLeft(2, '0');
+    final secs = (seconds % 60).toInt().toString().padLeft(2, '0');
+    return '$mins:$secs';
+  }
 }

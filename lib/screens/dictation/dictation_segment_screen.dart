@@ -60,7 +60,7 @@ class _DictationSegmentScreenState extends State<DictationSegmentScreen>
       contentType: 'Dictation',
       contentId: int.parse(widget.content.id),
       contentTitle: widget.content.title,
-      mode: 'Segment Practice',
+      mode: 'SegmentPractice',
       totalItems: widget.content.segments?.length ?? 1,
     );
   }
@@ -72,6 +72,20 @@ class _DictationSegmentScreenState extends State<DictationSegmentScreen>
     }
     _animationController.dispose();
     super.dispose();
+  }
+
+  String _getAudioUrl() {
+    // Nếu có audioPath, tạo URL đầy đủ
+    if (widget.content.audioPath != null && widget.content.audioPath!.isNotEmpty) {
+      final baseUrl = 'http://10.0.2.2:3000/uploads/dictation';
+      return '$baseUrl/${widget.content.audioPath}';
+    }
+    
+    // Fallback: Sử dụng sourceURL (YouTube)
+    print('Debug - audioPath: ${widget.content.audioPath}');
+    print('Debug - sourceURL: ${widget.content.sourceURL}');
+    print('Debug - using YouTube URL as fallback: ${widget.content.sourceURL}');
+    return widget.content.sourceURL;
   }
 
   void _checkAnswer(int segmentIndex) {
@@ -277,7 +291,7 @@ class _DictationSegmentScreenState extends State<DictationSegmentScreen>
           Padding(
             padding: const EdgeInsets.all(16),
             child: SegmentAudioPlayer(
-              audioUrl: widget.content.audioURL!,
+              audioUrl: _getAudioUrl(),
               segment: currentSegment,
               onSegmentComplete: () {
                 print('Segment playback completed');
