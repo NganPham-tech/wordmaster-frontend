@@ -1,9 +1,12 @@
-// lib/screens/profile/profile_screen.dart (UPDATED)
+// lib/screens/profile/profile_screen.dart 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:wordmaster_dacn/data/models/profile_model.dart';
+import 'package:wordmaster_dacn/data/models/achievement.dart';
 import 'package:wordmaster_dacn/screens/settings/settings_screen.dart';
 import 'package:wordmaster_dacn/services/auth_service.dart';
+import 'package:wordmaster_dacn/services/user_service.dart';
+import 'package:wordmaster_dacn/services/achievement_service.dart';
 import '../auth/login_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -16,125 +19,129 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen>
     with SingleTickerProviderStateMixin {
   final _authService = AuthService.instance;
-  late UserProfile _userProfile;
-  late List<StudyStat> _weeklyStats;
-  late List<RecentActivity> _recentActivities;
+  final _userService = UserService.instance;
+  final _achievementService = AchievementService.instance;
+  
   late TabController _tabController;
+  
+  // Data variables
+  UserProfile? _userProfile;
+  Map<String, dynamic>? _userStats;
+  List<StudyStat> _weeklyStats = [];
+  List<RecentActivity> _recentActivities = [];
+  List<Map<String, dynamic>> _achievements = [];
+  List<Achievement> _userAchievements = [];
+  AchievementStats? _achievementStats;
+  
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    _initializeData();
+    _loadUserData();
   }
 
-  void _initializeData() {
-    _userProfile = UserProfile(
-      id: '1',
-      firstName: 'Ngân',
-      lastName: 'Ái',
-      email: 'ngan.ai@example.com',
-      phone: '+84 123 456 789',
-      avatarUrl: null,
-      joinDate: DateTime(2024, 1, 15),
-      level: '12',
-      currentStreak: 7,
-      longestStreak: 15,
-      totalPoints: 1250,
-      totalCardsLearned: 234,
-      totalQuizzesCompleted: 45,
-      averageAccuracy: 78.5,
-      bio: 'Yêu thích học tiếng Anh qua phương pháp trực quan và tương tác',
-    );
+  Future<void> _loadUserData() async {
+    if (!_authService.isLoggedIn.value) {
+      setState(() => _isLoading = false);
+      return;
+    }
 
-    _weeklyStats = [
-      StudyStat(
-        date: DateTime.now().subtract(const Duration(days: 6)),
-        minutesStudied: 25,
-        cardsLearned: 15,
-        quizzesCompleted: 2,
-      ),
-      StudyStat(
-        date: DateTime.now().subtract(const Duration(days: 5)),
-        minutesStudied: 40,
-        cardsLearned: 22,
-        quizzesCompleted: 3,
-      ),
-      StudyStat(
-        date: DateTime.now().subtract(const Duration(days: 4)),
-        minutesStudied: 35,
-        cardsLearned: 18,
-        quizzesCompleted: 1,
-      ),
-      StudyStat(
-        date: DateTime.now().subtract(const Duration(days: 3)),
-        minutesStudied: 50,
-        cardsLearned: 30,
-        quizzesCompleted: 4,
-      ),
-      StudyStat(
-        date: DateTime.now().subtract(const Duration(days: 2)),
-        minutesStudied: 20,
-        cardsLearned: 12,
-        quizzesCompleted: 2,
-      ),
-      StudyStat(
-        date: DateTime.now().subtract(const Duration(days: 1)),
-        minutesStudied: 45,
-        cardsLearned: 25,
-        quizzesCompleted: 3,
-      ),
-      StudyStat(
-        date: DateTime.now(),
-        minutesStudied: 30,
-        cardsLearned: 20,
-        quizzesCompleted: 2,
-      ),
-    ];
+    setState(() => _isLoading = true);
 
-    _recentActivities = [
-      RecentActivity(
-        id: '1',
-        type: 'flashcard',
-        title: 'Học thẻ mới',
-        description: 'Đã học 15 thẻ từ vựng mới',
-        timestamp: DateTime.now().subtract(const Duration(hours: 2)),
-        deckName: 'Daily Conversations',
-      ),
-      RecentActivity(
-        id: '2',
-        type: 'quiz',
-        title: 'Hoàn thành quiz',
-        description: 'Kết quả: 8/10 câu đúng',
-        timestamp: DateTime.now().subtract(const Duration(hours: 4)),
-        score: '80%',
-        deckName: 'Grammar Test',
-      ),
-      RecentActivity(
-        id: '3',
-        type: 'dictation',
-        title: 'Luyện nghe chính tả',
-        description: 'Độ chính xác: 85%',
-        timestamp: DateTime.now().subtract(const Duration(days: 1)),
-        score: '85%',
-      ),
-      RecentActivity(
-        id: '4',
-        type: 'shadowing',
-        title: 'Luyện nói shadowing',
-        description: 'Điểm phát âm: 7.5/10',
-        timestamp: DateTime.now().subtract(const Duration(days: 1)),
-        score: '7.5',
-      ),
-      RecentActivity(
-        id: '5',
-        type: 'flashcard',
-        title: 'Ôn tập thẻ',
-        description: 'Đã ôn tập 25 thẻ đến hạn',
-        timestamp: DateTime.now().subtract(const Duration(days: 2)),
-        deckName: 'Business English',
-      ),
-    ];
+    try {
+      // Load all data in parallel including achievements from API
+      final results = await Future.wait([
+        _userService.getUserProfile(),
+        _userService.getUserStats(),
+        _userService.getWeeklyStats(),
+        _userService.getRecentActivities(limit: 10),
+        _achievementService.getUserAchievements(),
+        _achievementService.getAchievementStats(),
+      ]);
+
+      setState(() {
+        _userProfile = results[0] as UserProfile?;
+        _userStats = results[1] as Map<String, dynamic>?;
+        _weeklyStats = results[2] as List<StudyStat>;
+        _recentActivities = results[3] as List<RecentActivity>;
+        _userAchievements = results[4] as List<Achievement>;
+        _achievementStats = results[5] as AchievementStats?;
+        
+        // Nếu không load được profile từ API, tạo profile từ AuthService
+        if (_userProfile == null) {
+          _userProfile = UserProfile(
+            id: _authService.userId.toString(),
+            firstName: _authService.userName.split(' ').first,
+            lastName: _authService.userName.split(' ').length > 1 
+                ? _authService.userName.split(' ').last 
+                : '',
+            email: _authService.userEmail,
+            phone: null,
+            avatarUrl: _authService.userAvatar,
+            joinDate: DateTime.now(),
+            level: '1',
+            currentStreak: 0,
+            longestStreak: 0,
+            totalPoints: 0,
+            totalCardsLearned: 0,
+            totalQuizzesCompleted: 0,
+            averageAccuracy: 0.0,
+            bio: null,
+          );
+        }
+        
+        // Update profile with stats
+        if (_userStats != null) {
+          _userProfile = UserProfile(
+            id: _userProfile!.id,
+            firstName: _userProfile!.firstName,
+            lastName: _userProfile!.lastName,
+            email: _userProfile!.email,
+            phone: _userProfile!.phone,
+            avatarUrl: _userProfile!.avatarUrl,
+            joinDate: _userProfile!.joinDate,
+            level: _userStats!['level']?.toString() ?? _userProfile!.level,
+            currentStreak: _userStats!['currentStreak'] ?? 0,
+            longestStreak: _userStats!['longestStreak'] ?? 0,
+            totalPoints: _userStats!['totalPoints'] ?? 0,
+            totalCardsLearned: _userStats!['totalCardsLearned'] ?? 0,
+            totalQuizzesCompleted: _userStats!['totalQuizzesCompleted'] ?? 0,
+            averageAccuracy: (_userStats!['averageAccuracy'] ?? 0.0).toDouble(),
+            bio: _userProfile!.bio,
+          );
+        }
+        
+        _isLoading = false;
+      });
+    } catch (e) {
+      print('Error loading user data: $e');
+      
+      // Vẫn tạo profile cơ bản từ AuthService để không bị lỗi
+      setState(() {
+        _userProfile = UserProfile(
+          id: _authService.userId.toString(),
+          firstName: _authService.userName.split(' ').first,
+          lastName: _authService.userName.split(' ').length > 1 
+              ? _authService.userName.split(' ').last 
+              : '',
+          email: _authService.userEmail,
+          phone: null,
+          avatarUrl: _authService.userAvatar,
+          joinDate: DateTime.now(),
+          level: '1',
+          currentStreak: 0,
+          longestStreak: 0,
+          totalPoints: 0,
+          totalCardsLearned: 0,
+          totalQuizzesCompleted: 0,
+          averageAccuracy: 0.0,
+          bio: null,
+        );
+        _isLoading = false;
+      });
+    }
   }
 
   @override
@@ -147,409 +154,17 @@ class _ProfileScreenState extends State<ProfileScreen>
     });
   }
 
-  // Giao diện Duolingo-style khi chưa đăng nhập
-  Widget _buildGuestView() {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Header với gradient giống Duolingo
-            Container(
-              height: 200,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    const Color(0xFF58CC02),
-                    const Color(0xFF58CC02).withOpacity(0.9),
-                  ],
-                ),
-                borderRadius: const BorderRadius.only(
-                  bottomLeft: Radius.circular(30),
-                  bottomRight: Radius.circular(30),
-                ),
-              ),
-              child: Stack(
-                children: [
-                  // Background pattern
-                  _buildBackgroundPattern(),
-
-                  Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        // Owl mascot (thay thế bằng icon của bạn)
-                        Container(
-                          width: 80,
-                          height: 80,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(40),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: const Icon(
-                            Icons.school,
-                            size: 40,
-                            color: Color(0xFF58CC02),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        const Text(
-                          'WordMaster',
-                          style: TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          'Học tiếng Anh thông minh',
-                          style: TextStyle(fontSize: 16, color: Colors.white),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  children: [
-                    const SizedBox(height: 20),
-
-                    // Benefits section
-                    _buildBenefitItem(
-                      icon: Icons.trending_up,
-                      title: 'Theo dõi tiến độ học tập',
-                      subtitle: 'Xem biểu đồ và thống kê chi tiết',
-                    ),
-                    const SizedBox(height: 16),
-                    _buildBenefitItem(
-                      icon: Icons.emoji_events,
-                      title: 'Thành tích và huy hiệu',
-                      subtitle: 'Nhận phần thưởng khi hoàn thành mục tiêu',
-                    ),
-                    const SizedBox(height: 16),
-                    _buildBenefitItem(
-                      icon: Icons.sync,
-                      title: 'Đồng bộ đa thiết bị',
-                      subtitle: 'Học mọi lúc, mọi nơi',
-                    ),
-                    const SizedBox(height: 16),
-                    _buildBenefitItem(
-                      icon: Icons.leaderboard,
-                      title: 'Bảng xếp hạng',
-                      subtitle: 'So tài với bạn bè và cộng đồng',
-                    ),
-
-                    const SizedBox(height: 40),
-
-                    // CTA Buttons
-                    Column(
-                      children: [
-                        // Continue with Google
-                        SizedBox(
-                          width: double.infinity,
-                          height: 54,
-                          child: OutlinedButton(
-                            onPressed: () => _handleGoogleLogin(),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: const Color(0xFF1E293B),
-                              side: BorderSide(
-                                color: Colors.grey[300]!,
-                                width: 2,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              backgroundColor: Colors.white,
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Image.asset(
-                                  'assets/images/google.png',
-                                  width: 20,
-                                  height: 20,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return const Icon(
-                                      Icons.g_mobiledata,
-                                      size: 24,
-                                    );
-                                  },
-                                ),
-                                const SizedBox(width: 12),
-                                const Text(
-                                  'Tiếp tục với Google',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-
-                        // Continue with Facebook
-                        SizedBox(
-                          width: double.infinity,
-                          height: 54,
-                          child: OutlinedButton(
-                            onPressed: () => _handleFacebookLogin(),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: const Color(0xFF1E293B),
-                              side: BorderSide(
-                                color: Colors.grey[300]!,
-                                width: 2,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              backgroundColor: Colors.white,
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Image.asset(
-                                  'assets/images/facebook.png',
-                                  width: 20,
-                                  height: 20,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return const Icon(Icons.facebook, size: 24);
-                                  },
-                                ),
-                                const SizedBox(width: 12),
-                                const Text(
-                                  'Tiếp tục với Facebook',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-
-                        // Divider
-                        Row(
-                          children: [
-                            Expanded(child: Divider(color: Colors.grey[300])),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                              ),
-                              child: Text(
-                                'hoặc',
-                                style: TextStyle(
-                                  color: Colors.grey[600],
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ),
-                            Expanded(child: Divider(color: Colors.grey[300])),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-
-                        // Create Account Button
-                        SizedBox(
-                          width: double.infinity,
-                          height: 54,
-                          child: ElevatedButton(
-                            onPressed: () {
-                              Get.to(() => const LoginScreen());
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF58CC02),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              elevation: 2,
-                            ),
-                            child: const Text(
-                              'Tạo tài khoản mới',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-
-                        // Login Link
-                        TextButton(
-                          onPressed: () {
-                            Get.to(() => const LoginScreen());
-                          },
-                          child: RichText(
-                            text: const TextSpan(
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey,
-                              ),
-                              children: [
-                                TextSpan(text: 'Đã có tài khoản? '),
-                                TextSpan(
-                                  text: 'Đăng nhập',
-                                  style: TextStyle(
-                                    color: Color(0xFF58CC02),
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 40),
-
-                    // Footer text
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Text(
-                        'Bằng việc tiếp tục, bạn đồng ý với Điều khoản sử dụng và Chính sách bảo mật của chúng tôi',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[600],
-                          height: 1.4,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBackgroundPattern() {
-    return Positioned(
-      right: -50,
-      top: -50,
-      child: Container(
-        width: 200,
-        height: 200,
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.1),
-          shape: BoxShape.circle,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBenefitItem({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.grey[50],
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey[200]!),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: const Color(0xFF58CC02).withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(icon, color: const Color(0xFF58CC02), size: 24),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF1E293B),
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  subtitle,
-                  style: TextStyle(fontSize: 13, color: Colors.grey[600]),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _handleGoogleLogin() async {
-    final success = await _authService.loginWithGoogle();
-    if (success) {
-      Get.snackbar(
-        'Thành công',
-        'Đăng nhập bằng Google thành công!',
-        backgroundColor: const Color(0xFF58CC02),
-        colorText: Colors.white,
-      );
-    } else {
-      Get.snackbar(
-        'Lỗi',
-        'Đăng nhập bằng Google thất bại',
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
-    }
-  }
-
-  Future<void> _handleFacebookLogin() async {
-    final success = await _authService.loginWithFacebook();
-    if (success) {
-      Get.snackbar(
-        'Thành công',
-        'Đăng nhập bằng Facebook thành công!',
-        backgroundColor: const Color(0xFF58CC02),
-        colorText: Colors.white,
-      );
-    } else {
-      Get.snackbar(
-        'Lỗi',
-        'Đăng nhập bằng Facebook thất bại',
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
-    }
-  }
-
-  // Các method _buildAuthenticatedView() và các method khác giữ nguyên...
   Widget _buildAuthenticatedView() {
+    if (_isLoading) {
+      return Scaffold(
+        backgroundColor: const Color(0xFFF8FAFC),
+        body: const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    // Luôn hiển thị UI ngay cả khi chưa có dữ liệu
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       body: SafeArea(
@@ -593,10 +208,10 @@ class _ProfileScreenState extends State<ProfileScreen>
                   ),
                   child: CircleAvatar(
                     backgroundColor: Colors.white,
-                    backgroundImage: _authService.userAvatar != null
-                        ? NetworkImage(_authService.userAvatar!)
+                    backgroundImage: _userProfile?.avatarUrl != null
+                        ? NetworkImage(_userProfile!.avatarUrl!)
                         : null,
-                    child: _authService.userAvatar == null
+                    child: _userProfile?.avatarUrl == null
                         ? const Icon(
                             Icons.person,
                             size: 24,
@@ -611,7 +226,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        _authService.userName,
+                        _userProfile?.fullName ?? 'User',
                         style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -620,7 +235,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        _authService.userEmail,
+                        _userProfile?.email ?? '',
                         style: TextStyle(
                           fontSize: 12,
                           color: Colors.white.withOpacity(0.9),
@@ -654,7 +269,7 @@ class _ProfileScreenState extends State<ProfileScreen>
         children: [
           Expanded(
             child: _buildStatCard(
-              'Cấp ${_userProfile.level}',
+              'Cấp ${_userProfile?.level ?? 1}',
               'Level',
               const Color(0xFF6366F1),
             ),
@@ -662,7 +277,7 @@ class _ProfileScreenState extends State<ProfileScreen>
           const SizedBox(width: 8),
           Expanded(
             child: _buildStatCard(
-              '${_userProfile.currentStreak} ngày',
+              '${_achievementStats?.currentStreak ?? 0} ngày',
               'Streak',
               const Color(0xFFF59E0B),
             ),
@@ -670,8 +285,8 @@ class _ProfileScreenState extends State<ProfileScreen>
           const SizedBox(width: 8),
           Expanded(
             child: _buildStatCard(
-              '${_userProfile.totalPoints}',
-              'Điểm',
+              '${_achievementStats?.totalPoints ?? 0}',
+              'XP',
               const Color(0xFF10B981),
             ),
           ),
@@ -731,37 +346,268 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   Widget _buildStatsTab() {
-    return SingleChildScrollView(
-      physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: [
-          _buildSectionTitle('Thống kê học tập'),
-          const SizedBox(height: 16),
-          _buildLearningStats(),
-          const SizedBox(height: 24),
-          _buildSectionTitle('Tiến độ 7 ngày'),
-          const SizedBox(height: 16),
-          _buildWeeklyChart(),
-          const SizedBox(height: 24),
-          _buildSectionTitle('Thành tích'),
-          const SizedBox(height: 16),
-          _buildAchievementProgress(),
-          const SizedBox(height: 16),
-        ],
+    // Check if user has any learning data
+    final hasData = (_userProfile?.totalCardsLearned ?? 0) > 0 ||
+        (_userProfile?.totalQuizzesCompleted ?? 0) > 0 ||
+        _weeklyStats.isNotEmpty ||
+        _achievements.isNotEmpty;
+
+    return RefreshIndicator(
+      onRefresh: _loadUserData,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            if (!hasData) ...[
+              // Empty state for new users
+              const SizedBox(height: 40),
+              Container(
+                padding: const EdgeInsets.all(32),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    Container(
+                      width: 100,
+                      height: 100,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                        ),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.rocket_launch_outlined,
+                        size: 48,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    const Text(
+                      'Bắt đầu hành trình học tập!',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1E293B),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Chào mừng bạn đến với WordMaster!\nHãy bắt đầu học để xem thống kê và tiến độ của bạn.',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[600],
+                        height: 1.6,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 32),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildQuickActionCard(
+                            icon: Icons.style_outlined,
+                            title: 'Flashcards',
+                            color: const Color(0xFF6366F1),
+                            onTap: () {
+                              DefaultTabController.of(context).animateTo(1);
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _buildQuickActionCard(
+                            icon: Icons.headphones_outlined,
+                            title: 'Dictation',
+                            color: const Color(0xFFF59E0B),
+                            onTap: () {
+                              DefaultTabController.of(context).animateTo(2);
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildQuickActionCard(
+                            icon: Icons.record_voice_over_outlined,
+                            title: 'Shadowing',
+                            color: const Color(0xFF8B5CF6),
+                            onTap: () {
+                              // Navigate to shadowing
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _buildQuickActionCard(
+                            icon: Icons.quiz_outlined,
+                            title: 'Quiz',
+                            color: const Color(0xFF10B981),
+                            onTap: () {
+                              // Navigate to quiz
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ] else ...[
+              // Original stats display
+              _buildSectionTitle('Thống kê học tập'),
+              const SizedBox(height: 16),
+              _buildLearningStats(),
+              const SizedBox(height: 24),
+              _buildSectionTitle('Tiến độ 7 ngày'),
+              const SizedBox(height: 16),
+              _buildWeeklyChart(),
+              const SizedBox(height: 24),
+              _buildSectionTitle('Thành tích'),
+              const SizedBox(height: 16),
+              _buildAchievementProgress(),
+            ],
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildQuickActionCard({
+    required IconData icon,
+    required String title,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: color.withOpacity(0.2)),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: color, size: 32),
+            const SizedBox(height: 8),
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: color,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildActivityTab() {
-    return ListView.separated(
-      physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.all(16),
-      itemCount: _recentActivities.length,
-      separatorBuilder: (context, index) => const SizedBox(height: 12),
-      itemBuilder: (context, index) {
-        return _buildActivityItem(_recentActivities[index]);
-      },
+    if (_recentActivities.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 100,
+                height: 100,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF6366F1).withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.history,
+                  size: 48,
+                  color: const Color(0xFF6366F1).withOpacity(0.5),
+                ),
+              ),
+              const SizedBox(height: 24),
+              Text(
+                'Chưa có hoạt động nào',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey[700],
+                ),
+              ),
+              const SizedBox(height: 12),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 32),
+                child: Text(
+                  'Bắt đầu học để xem lịch sử hoạt động của bạn tại đây',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[500],
+                    height: 1.5,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              const SizedBox(height: 32),
+              ElevatedButton.icon(
+                onPressed: () {
+                  // Navigate to home tab
+                  DefaultTabController.of(context).animateTo(0);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF6366F1),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 32,
+                    vertical: 16,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 0,
+                ),
+                icon: const Icon(Icons.play_arrow, color: Colors.white),
+                label: const Text(
+                  'Bắt đầu học ngay',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: _loadUserData,
+      child: ListView.separated(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(16),
+        itemCount: _recentActivities.length,
+        separatorBuilder: (context, index) => const SizedBox(height: 12),
+        itemBuilder: (context, index) {
+          return _buildActivityItem(_recentActivities[index]);
+        },
+      ),
     );
   }
 
@@ -786,7 +632,7 @@ class _ProfileScreenState extends State<ProfileScreen>
               Expanded(
                 child: _buildStatItem(
                   icon: Icons.style_outlined,
-                  value: _userProfile.totalCardsLearned.toString(),
+                  value: (_userProfile?.totalCardsLearned ?? 0).toString(),
                   label: 'Thẻ đã học',
                   color: const Color(0xFF6366F1),
                 ),
@@ -795,7 +641,7 @@ class _ProfileScreenState extends State<ProfileScreen>
               Expanded(
                 child: _buildStatItem(
                   icon: Icons.quiz_outlined,
-                  value: _userProfile.totalQuizzesCompleted.toString(),
+                  value: (_userProfile?.totalQuizzesCompleted ?? 0).toString(),
                   label: 'Quiz hoàn thành',
                   color: const Color(0xFF10B981),
                 ),
@@ -808,7 +654,7 @@ class _ProfileScreenState extends State<ProfileScreen>
               Expanded(
                 child: _buildStatItem(
                   icon: Icons.timeline_outlined,
-                  value: '${_userProfile.averageAccuracy}%',
+                  value: '${_userProfile?.averageAccuracy.toStringAsFixed(1) ?? 0}%',
                   label: 'Độ chính xác',
                   color: const Color(0xFFF59E0B),
                 ),
@@ -817,7 +663,7 @@ class _ProfileScreenState extends State<ProfileScreen>
               Expanded(
                 child: _buildStatItem(
                   icon: Icons.local_fire_department,
-                  value: _userProfile.longestStreak.toString(),
+                  value: (_userProfile?.longestStreak ?? 0).toString(),
                   label: 'Streak cao nhất',
                   color: const Color(0xFFEF4444),
                 ),
@@ -866,6 +712,71 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   Widget _buildWeeklyChart() {
+    if (_weeklyStats.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(32),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            Icon(
+              Icons.calendar_today_outlined,
+              size: 48,
+              color: Colors.grey[400],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Chưa có dữ liệu học tập',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[700],
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Bắt đầu học để xem tiến độ của bạn!',
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.grey[500],
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () {
+                // Navigate to home tab
+                DefaultTabController.of(context).animateTo(0);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF6366F1),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text(
+                'Bắt đầu học',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     final maxMinutes = _weeklyStats
         .map((e) => e.minutesStudied)
         .reduce((a, b) => a > b ? a : b);
@@ -890,7 +801,6 @@ class _ProfileScreenState extends State<ProfileScreen>
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: _weeklyStats.asMap().entries.map((entry) {
-                final index = entry.key;
                 final stat = entry.value;
                 final height = maxMinutes > 0
                     ? (stat.minutesStudied / maxMinutes) * 60
@@ -925,7 +835,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        _getDayName(index),
+                        _getDayName(stat.date.weekday - 1),
                         style: TextStyle(fontSize: 10, color: Colors.grey[600]),
                       ),
                     ],
@@ -939,41 +849,15 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
-  String _getDayName(int index) {
+  String _getDayName(int weekday) {
     final days = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
-    return days[index];
+    return days[weekday % 7];
   }
 
   Widget _buildAchievementProgress() {
-    final achievements = [
-      {
-        'name': 'Học 100 thẻ',
-        'progress': 234.0,
-        'target': 100,
-        'completed': true,
-      },
-      {
-        'name': 'Streak 7 ngày',
-        'progress': 7.0,
-        'target': 7,
-        'completed': true,
-      },
-      {
-        'name': 'Hoàn thành 50 quiz',
-        'progress': 45.0,
-        'target': 50,
-        'completed': false,
-      },
-      {
-        'name': 'Độ chính xác 80%',
-        'progress': 78.5,
-        'target': 80,
-        'completed': false,
-      },
-    ];
-
+  if (_userAchievements.isEmpty) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -986,64 +870,697 @@ class _ProfileScreenState extends State<ProfileScreen>
         ],
       ),
       child: Column(
-        children: achievements.map((achievement) {
-          final isCompleted = achievement['completed'] as bool;
-          final progress = achievement['progress'] as double;
-          final target = achievement['target'] as int;
-          final percentage = isCompleted ? 1.0 : progress / target;
+        children: [
+          Icon(
+            Icons.emoji_events_outlined,
+            size: 48,
+            color: Colors.grey[400],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Chưa có thành tích',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey[700],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Hoàn thành các nhiệm vụ để nhận huy hiệu!',
+            style: TextStyle(
+              fontSize: 13,
+              color: Colors.grey[500],
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
 
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+  final unlockedCount = _userAchievements.where((a) => a.isUnlocked).length;
+  final totalPoints = _userAchievements
+      .where((a) => a.isUnlocked)
+      .fold<int>(0, (sum, a) => sum + a.points);
+  final completionRate = (_userAchievements.length > 0)
+      ? (unlockedCount / _userAchievements.length * 100)
+      : 0.0;
+
+  return Column(
+    children: [
+      // Achievement Summary Card với animation gradient
+      Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFF6366F1),
+              Color(0xFF8B5CF6),
+              Color(0xFFEC4899),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF6366F1).withOpacity(0.4),
+              blurRadius: 12,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            Row(
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        achievement['name'] as String,
-                        style: const TextStyle(
+                // Trophy icon với glow effect
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.25),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.white.withOpacity(0.3),
+                        blurRadius: 8,
+                        spreadRadius: 2,
+                      ),
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.emoji_events,
+                    color: Colors.amber,
+                    size: 32,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Thành tích của bạn',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.95),
                           fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          Text(
+                            '$unlockedCount',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                              height: 1,
+                            ),
+                          ),
+                          Text(
+                            '/${_userAchievements.length}',
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.7),
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              '${completionRate.toStringAsFixed(0)}%',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                // Total points badge
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.3),
+                      width: 1.5,
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      const Icon(
+                        Icons.stars_rounded,
+                        color: Colors.amber,
+                        size: 24,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '$totalPoints',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        'XP',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.9),
+                          fontSize: 10,
                           fontWeight: FontWeight.w600,
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      isCompleted
-                          ? 'Hoàn thành'
-                          : '${progress.toInt()}/$target',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: isCompleted
-                            ? const Color(0xFF10B981)
-                            : Colors.grey[600],
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: LinearProgressIndicator(
-                    value: percentage > 1.0 ? 1.0 : percentage,
-                    minHeight: 4,
-                    backgroundColor: Colors.grey[200],
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      isCompleted
-                          ? const Color(0xFF10B981)
-                          : const Color(0xFF6366F1),
-                    ),
+                    ],
                   ),
                 ),
               ],
             ),
-          );
-        }).toList(),
+            const SizedBox(height: 16),
+            // Progress bar
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: LinearProgressIndicator(
+                value: completionRate / 100,
+                minHeight: 8,
+                backgroundColor: Colors.white.withOpacity(0.2),
+                valueColor: const AlwaysStoppedAnimation<Color>(Colors.amber),
+              ),
+            ),
+          ],
+        ),
+      ),
+
+      const SizedBox(height: 20),
+
+      // Achievement Grid
+      Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF6366F1).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    Icons.military_tech,
+                    color: Color(0xFF6366F1),
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Text(
+                  'Bộ sưu tập huy hiệu',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1E293B),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+
+            // Grid of achievements
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3,
+                childAspectRatio: 0.85,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+              ),
+              itemCount: _userAchievements.take(6).length,
+              itemBuilder: (context, index) {
+                final achievement = _userAchievements[index];
+                return _buildAchievementBadge(achievement);
+              },
+            ),
+
+            if (_userAchievements.length > 6) ...[
+              const SizedBox(height: 16),
+              InkWell(
+                onTap: _showAllAchievements,
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        const Color(0xFF6366F1).withOpacity(0.1),
+                        const Color(0xFF8B5CF6).withOpacity(0.1),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: const Color(0xFF6366F1).withOpacity(0.3),
+                      width: 1.5,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text(
+                        'Xem tất cả',
+                        style: TextStyle(
+                          color: Color(0xFF6366F1),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF6366F1),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          '+${_userAchievements.length - 6}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    ],
+  );
+}
+Widget _buildAchievementBadge(Achievement achievement) {
+  final percentage = achievement.targetProgress > 0
+      ? (achievement.progress / achievement.targetProgress).clamp(0.0, 1.0)
+      : 0.0;
+
+  return GestureDetector(
+    onTap: () => _showAchievementDetail(achievement),
+    child: Container(
+      decoration: BoxDecoration(
+        color: achievement.isUnlocked
+            ? Colors.white
+            : Colors.grey.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: achievement.isUnlocked
+              ? const Color(0xFF6366F1).withOpacity(0.3)
+              : Colors.grey.withOpacity(0.15),
+          width: 2,
+        ),
+        boxShadow: achievement.isUnlocked
+            ? [
+                BoxShadow(
+                  color: const Color(0xFF6366F1).withOpacity(0.15),
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
+                ),
+              ]
+            : [],
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // Badge icon với glow effect cho unlocked achievements
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              if (achievement.isUnlocked)
+                Container(
+                  width: 55,
+                  height: 55,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: RadialGradient(
+                      colors: [
+                        Colors.amber.withOpacity(0.3),
+                        Colors.amber.withOpacity(0.0),
+                      ],
+                    ),
+                  ),
+                ),
+              Container(
+                width: 50,
+                height: 50,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: achievement.isUnlocked
+                      ? const LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            Color(0xFFFFF3E0),
+                            Color(0xFFFFE0B2),
+                          ],
+                        )
+                      : null,
+                  color: achievement.isUnlocked ? null : Colors.grey[200],
+                ),
+                child: Icon(
+                  achievement.badgeIcon ?? Icons.emoji_events,
+                  size: 26,
+                  color: achievement.isUnlocked 
+                      ? Colors.amber[700] 
+                      : Colors.grey[500],
+                ),
+              ),
+              if (achievement.isUnlocked)
+                Positioned(
+                  top: 0,
+                  right: 0,
+                  child: Container(
+                    padding: const EdgeInsets.all(3),
+                    decoration: const BoxDecoration(
+                      color: Colors.green,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.check,
+                      color: Colors.white,
+                      size: 12,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+
+          const SizedBox(height: 8),
+
+          // Achievement title
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: Text(
+              achievement.title ?? 'Achievement',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                color: achievement.isUnlocked
+                    ? const Color(0xFF1E293B)
+                    : Colors.grey[500],
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+
+          const SizedBox(height: 6),
+
+          // Progress indicator hoặc points badge
+          if (achievement.isUnlocked)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+              decoration: BoxDecoration(
+                color: Colors.amber,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.stars,
+                    color: Colors.white,
+                    size: 10,
+                  ),
+                  const SizedBox(width: 2),
+                  Text(
+                    '+${achievement.points}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else
+            SizedBox(
+              width: 40,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: LinearProgressIndicator(
+                  value: percentage,
+                  minHeight: 4,
+                  backgroundColor: Colors.grey[300],
+                  valueColor: const AlwaysStoppedAnimation<Color>(
+                    Color(0xFF6366F1),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    ),
+  );
+}
+  Widget _buildAchievementItem(Achievement achievement) {
+    final percentage = achievement.targetProgress > 0
+        ? (achievement.progress / achievement.targetProgress).clamp(0.0, 1.0)
+        : 0.0;
+    
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: achievement.isUnlocked 
+            ? Colors.amber.withOpacity(0.1) 
+            : Colors.grey.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: achievement.isUnlocked 
+              ? Colors.amber.withOpacity(0.3)
+              : Colors.grey.withOpacity(0.2),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          // Achievement icon
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: achievement.isUnlocked 
+                  ? Colors.amber.withOpacity(0.2)
+                  : Colors.grey.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Icon(
+              achievement.badgeIcon ?? Icons.emoji_events,
+              size: 20,
+              color: achievement.isUnlocked 
+                  ? Colors.amber[700]
+                  : Colors.grey[500],
+            ),
+          ),
+          
+          const SizedBox(width: 12),
+          
+          // Achievement info
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        achievement.title ?? 'Achievement',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: achievement.isUnlocked 
+                              ? const Color(0xFF1E293B)
+                              : Colors.grey[600],
+                        ),
+                      ),
+                    ),
+                    if (achievement.isUnlocked) ...[
+                      const Icon(
+                        Icons.check_circle,
+                        color: Colors.green,
+                        size: 16,
+                      ),
+                    ],
+                  ],
+                ),
+                
+                const SizedBox(height: 4),
+                
+                Text(
+                  achievement.description ?? '',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[600],
+                  ),
+                ),
+                
+                const SizedBox(height: 8),
+                
+                // Progress bar
+                Row(
+                  children: [
+                    Expanded(
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: LinearProgressIndicator(
+                          value: percentage,
+                          minHeight: 4,
+                          backgroundColor: Colors.grey[200],
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            achievement.isUnlocked
+                                ? Colors.green
+                                : const Color(0xFF6366F1),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      achievement.isUnlocked
+                          ? 'Hoàn thành'
+                          : '${achievement.progress}/${achievement.targetProgress}',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: achievement.isUnlocked
+                            ? Colors.green
+                            : Colors.grey[600],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          
+          // Points
+          if (achievement.isUnlocked) ...[
+            const SizedBox(width: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.amber,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                '+${achievement.points}',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  void _showAllAchievements() {
+    Get.bottomSheet(
+      Container(
+        height: Get.height * 0.8,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          children: [
+            // Header
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                border: Border(
+                  bottom: BorderSide(color: Colors.grey[200]!),
+                ),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.emoji_events,
+                    color: Color(0xFF6366F1),
+                    size: 24,
+                  ),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Text(
+                      'Tất cả thành tích',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1E293B),
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Get.back(),
+                    icon: const Icon(Icons.close),
+                  ),
+                ],
+              ),
+            ),
+            
+            // Achievement list
+            Expanded(
+              child: ListView.builder(
+                padding: const EdgeInsets.all(16),
+                itemCount: _userAchievements.length,
+                itemBuilder: (context, index) {
+                  return _buildAchievementItem(_userAchievements[index]);
+                },
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1206,6 +1723,342 @@ class _ProfileScreenState extends State<ProfileScreen>
       MaterialPageRoute(builder: (context) => const SettingsScreen()),
     );
   }
+
+  // Keep the _buildGuestView() method as is from your original code
+  Widget _buildGuestView() {
+    // ... (giữ nguyên code gốc)
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Column(
+          children: [
+            Container(
+              height: 200,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    const Color(0xFF58CC02),
+                    const Color(0xFF58CC02).withOpacity(0.9),
+                  ],
+                ),
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(30),
+                  bottomRight: Radius.circular(30),
+                ),
+              ),
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      width: 80,
+                      height: 80,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(40),
+                      ),
+                      child: const Icon(
+                        Icons.school,
+                        size: 40,
+                        color: Color(0xFF58CC02),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'WordMaster',
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Expanded(
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text(
+                        'Đăng nhập để trải nghiệm đầy đủ',
+                        style: TextStyle(fontSize: 18),
+                      ),
+                      const SizedBox(height: 24),
+                      ElevatedButton(
+                        onPressed: () => Get.to(() => const LoginScreen()),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF58CC02),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 48,
+                            vertical: 16,
+                          ),
+                        ),
+                        child: const Text(
+                          'Đăng nhập',
+                          style: TextStyle(color: Colors.white, fontSize: 16),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+  void _showAchievementDetail(Achievement achievement) {
+  final percentage = achievement.targetProgress > 0
+      ? (achievement.progress / achievement.targetProgress * 100).clamp(0.0, 100.0)
+      : 0.0;
+
+  showDialog(
+    context: context,
+    builder: (context) => Dialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(24),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: achievement.isUnlocked
+                ? [
+                    const Color(0xFFFFF3E0),
+                    Colors.white,
+                  ]
+                : [
+                    Colors.grey[100]!,
+                    Colors.white,
+                  ],
+          ),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Badge icon lớn
+            Container(
+              width: 100,
+              height: 100,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: achievement.isUnlocked
+                    ? const LinearGradient(
+                        colors: [Color(0xFFFFD54F), Color(0xFFFFB300)],
+                      )
+                    : LinearGradient(
+                        colors: [Colors.grey[300]!, Colors.grey[400]!],
+                      ),
+                boxShadow: achievement.isUnlocked
+                    ? [
+                        BoxShadow(
+                          color: const Color(0xFFFFD54F).withOpacity(0.5),
+                          blurRadius: 20,
+                          spreadRadius: 5,
+                        ),
+                      ]
+                    : [],
+              ),
+              child: Center(
+                child: Icon(
+                  achievement.badgeIcon ?? Icons.emoji_events,
+                  size: 48,
+                  color: Colors.amber[700],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            // Title
+            Text(
+              achievement.title ?? 'Achievement',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: achievement.isUnlocked
+                    ? const Color(0xFF1E293B)
+                    : Colors.grey[700],
+              ),
+              textAlign: TextAlign.center,
+            ),
+
+            const SizedBox(height: 12),
+
+            // Description
+            Text(
+              achievement.description ?? '',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[600],
+                height: 1.5,
+              ),
+              textAlign: TextAlign.center,
+            ),
+
+            const SizedBox(height: 20),
+
+            // Progress
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.grey[200]!),
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Tiến độ',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey[600],
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      Text(
+                        achievement.isUnlocked
+                            ? 'Hoàn thành ✓'
+                            : '${achievement.progress}/${achievement.targetProgress}',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: achievement.isUnlocked
+                              ? Colors.green
+                              : const Color(0xFF6366F1),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: LinearProgressIndicator(
+                      value: percentage / 100,
+                      minHeight: 8,
+                      backgroundColor: Colors.grey[200],
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        achievement.isUnlocked
+                            ? Colors.green
+                            : const Color(0xFF6366F1),
+                      ),
+                    ),
+                  ),
+                  if (!achievement.isUnlocked) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      '${percentage.toStringAsFixed(0)}% hoàn thành',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[500],
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+
+            // Rewards
+            if (achievement.isUnlocked) ...[
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFFFD54F), Color(0xFFFFB300)],
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.stars,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Nhận được +${achievement.points} XP',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (achievement.unlockedAt != null) ...[
+                const SizedBox(height: 12),
+                Text(
+                  'Đạt được vào ${_formatUnlockDate(achievement.unlockedAt!)}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[500],
+                  ),
+                ),
+              ],
+            ],
+
+            const SizedBox(height: 20),
+
+            // Close button
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 32,
+                  vertical: 12,
+                ),
+                backgroundColor: const Color(0xFF6366F1).withOpacity(0.1),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text(
+                'Đóng',
+                style: TextStyle(
+                  color: Color(0xFF6366F1),
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+String _formatUnlockDate(DateTime date) {
+  final now = DateTime.now();
+  final difference = now.difference(date);
+
+  if (difference.inDays == 0) {
+    if (difference.inHours == 0) {
+      return '${difference.inMinutes} phút trước';
+    }
+    return '${difference.inHours} giờ trước';
+  } else if (difference.inDays < 7) {
+    return '${difference.inDays} ngày trước';
+  } else {
+    return '${date.day}/${date.month}/${date.year}';
+  }
+}
 
   @override
   void dispose() {

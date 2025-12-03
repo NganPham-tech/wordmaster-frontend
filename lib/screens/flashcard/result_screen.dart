@@ -6,7 +6,7 @@ class ResultScreen extends StatelessWidget {
   final int totalCards;
   final int knownCards;
   final int unknownCards;
-  final String type; // 'vocabulary' or 'grammar'
+  final String type; 
 
   const ResultScreen({
     super.key,
@@ -61,7 +61,7 @@ class ResultScreen extends StatelessWidget {
                 padding: const EdgeInsets.all(20),
                 child: Column(
                   children: [
-                    // Success icon and title
+             
                     Container(
                       width: 100,
                       height: 100,
@@ -344,13 +344,13 @@ class ResultScreen extends StatelessWidget {
 
   String _getMotivationMessage(int percentage) {
     if (percentage >= 80) {
-      return 'Xuất sắc! Bạn đã nắm vững kiến thức! 🌟';
+      return 'Xuất sắc! Bạn đã nắm vững kiến thức!';
     } else if (percentage >= 60) {
-      return 'Tốt lắm! Tiếp tục phát huy nhé! 👍';
+      return 'Tốt lắm! Tiếp tục phát huy nhé!';
     } else if (percentage >= 40) {
-      return 'Khá tốt! Hãy ôn tập thêm để tiến bộ hơn! 📈';
+      return 'Khá tốt! Hãy ôn tập thêm để tiến bộ hơn!';
     } else {
-      return 'Đừng nản chí! Học lại sẽ giúp bạn tiến bộ! 💪';
+      return 'Đừng nản chí! Học lại sẽ giúp bạn tiến bộ!';
     }
   }
 }

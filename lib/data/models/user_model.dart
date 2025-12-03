@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-//
+//D:\DemoDACN\wordmaster_dacn\lib\data\models\user_model.dart
 class User {
   final String id;
   final String firstName;

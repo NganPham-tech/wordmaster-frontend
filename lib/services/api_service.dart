@@ -2,7 +2,8 @@ import 'package:get/get.dart';
 import '../data/models/deck_model.dart';
 import '../data/models/flashcard_model.dart';
 import '../data/models/grammar_card_model.dart';
-
+import 'auth_service.dart';
+//D:\DemoDACN\wordmaster_dacn\lib\services\api_service.dart
 class ApiService extends GetConnect {
   static ApiService? _instance;
   static ApiService get instance {
@@ -19,6 +20,15 @@ class ApiService extends GetConnect {
     httpClient.defaultContentType = 'application/json';
     
     httpClient.addRequestModifier<dynamic>((request) {
+      // Add authorization header if user is logged in
+      if (Get.isRegistered<AuthService>()) {
+        final authService = AuthService.instance;
+        final token = authService.token.value;
+        if (token != null && token.isNotEmpty) {
+          request.headers['Authorization'] = 'Bearer $token';
+        }
+      }
+      
       print('REQUEST: ${request.method} ${request.url}');
       return request;
     });
@@ -31,7 +41,7 @@ class ApiService extends GetConnect {
     super.onInit();
   }
 
-  // ==================== VOCABULARY DECKS ====================
+  
   
   Future<List<Deck>> getVocabularyDecks() async {
     try {
@@ -48,7 +58,7 @@ class ApiService extends GetConnect {
     }
   }
 
-  // ==================== GRAMMAR DECKS ====================
+
   
   Future<List<Deck>> getGrammarDecks() async {
     try {
@@ -65,7 +75,7 @@ class ApiService extends GetConnect {
     }
   }
 
-  // ==================== ALL DECKS ====================
+ 
   
   Future<List<Deck>> getDecks() async {
     try {
@@ -96,7 +106,7 @@ class ApiService extends GetConnect {
     }
   }
 
-  // ==================== FLASHCARDS ====================
+
   
   Future<List<Flashcard>> getFlashcardsByDeck(int deckId) async {
     try {
@@ -127,7 +137,7 @@ class ApiService extends GetConnect {
     }
   }
 
-  // ==================== GRAMMAR CARDS ====================
+
   
   Future<List<GrammarCard>> getGrammarCardsByDeck(int deckId) async {
     try {
@@ -158,7 +168,7 @@ class ApiService extends GetConnect {
     }
   }
 
-  // ==================== DICTATION ====================
+  
   
   Future<List<dynamic>> getDictationContent(Map<String, String> queryParams) async {
     try {
@@ -248,7 +258,6 @@ class ApiService extends GetConnect {
     }
   }
 
-  // ==================== ERROR HANDLING ====================
   
   String _handleError(Response response) {
     switch (response.statusCode) {

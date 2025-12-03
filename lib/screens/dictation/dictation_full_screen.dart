@@ -1,8 +1,12 @@
-// D:\DemoDACN\wordmaster_dacn\lib\screens\dictation\dictation_full_screen.dart
+// lib/screens/dictation/dictation_full_screen.dart
+
+
 import 'package:flutter/material.dart';
 import '/data/models/dictation_model.dart';
 import 'widgets/real_audio_player.dart';
 import 'widgets/result_dialog.dart';
+import 'package:get/get.dart';
+import '../../controllers/session_controller.dart'; 
 
 class DictationFullScreen extends StatefulWidget {
   final DictationContent content;
@@ -25,6 +29,9 @@ class _DictationFullScreenState extends State<DictationFullScreen>
   bool _showTranscript = false;
   bool _hasSubmitted = false;
   DateTime _startTime = DateTime.now();
+  
+  //
+  final sessionController = Get.put(SessionController());
 
   @override
   void initState() {
@@ -38,6 +45,19 @@ class _DictationFullScreenState extends State<DictationFullScreen>
       curve: Curves.easeInOut,
     );
     _animationController.forward();
+    
+    
+    _initializeSession();
+  }
+
+  Future<void> _initializeSession() async {
+    await sessionController.startSession(
+      contentType: 'Dictation',
+      contentId: int.parse(widget.content.id),
+      contentTitle: widget.content.title,
+      mode: 'Practice',
+      totalItems: 1, // 1 bài dictation
+    );
   }
 
   @override
@@ -53,7 +73,7 @@ class _DictationFullScreenState extends State<DictationFullScreen>
     });
   }
 
-  void _submitAnswer() {
+  void _submitAnswer() async {
     if (_inputController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -72,11 +92,31 @@ class _DictationFullScreenState extends State<DictationFullScreen>
       _inputController.text
     );
     
+    // 🆕 CALCULATE SCORE based on accuracy
+    final accuracy = result['accuracy'] as int;
+    final scoreEarned = _calculateScore(accuracy);
+    
+    // 🆕 COMPLETE SESSION
+    await sessionController.completeSession();
+    
     setState(() {
       _hasSubmitted = true;
     });
     
-    _showResultDialog(result, timeSpent);
+    _showResultDialog(result, timeSpent, scoreEarned);
+  }
+
+  // 🆕 CALCULATE SCORE
+  double _calculateScore(int accuracy) {
+    // Base score: 100 points
+    // Accuracy multiplier
+    double baseScore = 100.0;
+    double accuracyMultiplier = accuracy / 100.0;
+    
+    // Time bonus (if completed quickly)
+    // final timeBonus = _calculateTimeBonus();
+    
+    return baseScore * accuracyMultiplier;
   }
 
   Map<String, dynamic> _calculateAccuracy(String original, String userInput) {
@@ -125,7 +165,7 @@ class _DictationFullScreenState extends State<DictationFullScreen>
     };
   }
 
-  void _showResultDialog(Map<String, dynamic> result, int timeSpent) {
+  void _showResultDialog(Map<String, dynamic> result, int timeSpent, double scoreEarned) {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -135,15 +175,13 @@ class _DictationFullScreenState extends State<DictationFullScreen>
         correctAnswers: result['correctWords'],
         totalQuestions: result['totalWords'],
         timeSpent: timeSpent,
+        scoreEarned: scoreEarned.toInt(), 
         onRetry: () {
           Navigator.pop(context);
-          setState(() {
-            _inputController.clear();
-            _hasSubmitted = false;
-            _startTime = DateTime.now();
-          });
+          _restartPractice();
         },
         onClose: () {
+          sessionController.endSession(); 
           Navigator.pop(context);
           Navigator.pop(context);
         },
@@ -160,6 +198,9 @@ class _DictationFullScreenState extends State<DictationFullScreen>
     });
     _animationController.reset();
     _animationController.forward();
+    
+    
+    _initializeSession();
   }
 
   @override
@@ -167,19 +208,40 @@ class _DictationFullScreenState extends State<DictationFullScreen>
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: const Text(
-          'Nghe Toàn Bài',
-          style: TextStyle(
-            fontSize: 18,
-            color: Color(0xFF1E293B),
-            fontWeight: FontWeight.w600,
-          ),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Nghe Toàn Bài',
+              style: TextStyle(
+                fontSize: 16,
+                color: Color(0xFF1E293B),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            
+            Obx(() => Text(
+              '${sessionController.currentScore.toInt()} XP',
+              style: const TextStyle(
+                fontSize: 12,
+                color: Color(0xFF6366F1),
+                fontWeight: FontWeight.w600,
+              ),
+            )),
+          ],
         ),
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Color(0xFF1E293B)),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () async {
+        
+            if (!_hasSubmitted) {
+              await sessionController.completeSession();
+            }
+            sessionController.endSession();
+            Navigator.pop(context);
+          },
         ),
         actions: [
           IconButton(

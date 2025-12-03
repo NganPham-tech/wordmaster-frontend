@@ -1,7 +1,7 @@
 // lib/screens/settings/settings_screen.dart
 import 'package:flutter/material.dart';
 import '../../services/auth_service.dart';
-
+import 'notification_settings_screen.dart';
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
 
@@ -10,7 +10,6 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  bool _notificationsEnabled = true;
   bool _darkModeEnabled = false;
   bool _autoPlayAudio = true;
   bool _dailyReminder = true;
@@ -105,15 +104,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
             // Thông báo
             _buildSectionTitle('Thông báo'),
             _buildSettingsCard([
-              _buildSettingsItemWithSwitch(
+              _buildSettingsItem(
                 icon: Icons.notifications_outlined,
-                title: 'Thông báo',
-                subtitle: 'Bật/tắt tất cả thông báo',
-                value: _notificationsEnabled,
-                onChanged: (value) {
-                  setState(() {
-                    _notificationsEnabled = value;
-                  });
+                title: 'Quản lý thông báo',
+                subtitle: 'Cài đặt chi tiết thông báo',
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const NotificationSettingsScreen(),
+                    ),
+                  );
                 },
               ),
               _buildSettingsItemWithSwitch(
@@ -526,7 +527,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
       );
 
-      // Quay về màn hình chính
       Navigator.of(context).popUntil((route) => route.isFirst);
     }
   }

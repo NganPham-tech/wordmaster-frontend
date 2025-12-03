@@ -1,8 +1,11 @@
+// lib/screens/home/home_screen.dart 
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:wordmaster_dacn/screens/shadowing/shadowing_list_screen.dart';
-import '/data/models/user_model.dart';
+import 'package:wordmaster_dacn/services/auth_service.dart';
+import 'package:wordmaster_dacn/services/user_service.dart';
 import '/screens/dictation/dictation_screen.dart';
-//D:\DemoDACN\wordmaster_dacn\lib\screens\home\home_screen.dart
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -10,13 +13,16 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
-  late final User _currentUser;
-  late final DailyGoal _dailyGoal;
-  final List<QuickAction> _quickActions = [];
-  final List<Deck> _recommendedDecks = [];
-  final List<Deck> _recentDecks = [];
+class _HomeScreenState extends State<HomeScreen>
+    with SingleTickerProviderStateMixin {
+  final _authService = AuthService.instance;
+  final _userService = UserService.instance;
+
   late AnimationController _animationController;
+
+  // Data variables
+  Map<String, dynamic>? _userStats;
+  bool _isLoading = true;
 
   @override
   void initState() {
@@ -25,7 +31,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       vsync: this,
       duration: const Duration(milliseconds: 800),
     )..forward();
-    _initializeData();
+    _loadUserData();
   }
 
   @override
@@ -34,161 +40,86 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     super.dispose();
   }
 
-  void _initializeData() {
-    _currentUser = User(
-      id: '1',
-      firstName: 'Ngân', 
-      lastName: 'Ái',
-      email: 'ngan@example.com',
-      currentStreak: 7,
-      totalPoints: 1250,
-      level: 12,
-      avatarUrl: null,
-    );
+  Future<void> _loadUserData() async {
+    if (!_authService.isLoggedIn.value) {
+      setState(() => _isLoading = false);
+      return;
+    }
 
-    _dailyGoal = DailyGoal(
-      targetMinutes: 20,
-      completedMinutes: 12,
-      targetCards: 10,
-      completedCards: 6,
-    );
+    setState(() => _isLoading = true);
 
-    _quickActions.addAll([
-      QuickAction(
-        id: 'flashcards',
-        title: 'Flashcard',
-        icon: Icons.style_outlined,
-        color: const Color(0xFF6366F1),
-        pendingItems: 8,
-      ),
-      QuickAction(
-        id: 'grammar',
-        title: 'Grammar',
-        icon: Icons.school_outlined,
-        color: const Color(0xFF8B5CF6),
-        pendingItems: 3,
-      ),
-      QuickAction(
-        id: 'dictation',
-        title: 'Dictation',
-        icon: Icons.headphones_outlined,
-        color: const Color(0xFF10B981),
-        pendingItems: 5,
-      ),
-      QuickAction(
-        id: 'shadowing',
-        title: 'Shadowing',
-        icon: Icons.record_voice_over_outlined,
-        color: const Color(0xFFF59E0B),
-        pendingItems: 2,
-      ),
-    ]);
-
-    _recommendedDecks.addAll([
-      Deck(
-        id: '1',
-        name: 'Daily Conversations',
-        description: 'Essential phrases for everyday use',
-        category: 'Basic',
-        totalCards: 50,
-        masteredCards: 15,
-        difficulty: 'Beginner',
-        rating: 4.8,
-      ),
-      Deck(
-        id: '2',
-        name: 'Business English',
-        description: 'Professional workplace vocabulary',
-        category: 'Business',
-        totalCards: 75,
-        masteredCards: 0,
-        difficulty: 'Intermediate',
-        rating: 4.6,
-      ),
-      Deck(
-        id: '3',
-        name: 'Travel Phrases',
-        description: 'Must-know phrases for travelers',
-        category: 'Travel',
-        totalCards: 40,
-        masteredCards: 30,
-        difficulty: 'Beginner',
-        rating: 4.9,
-      ),
-    ]);
-
-    _recentDecks.addAll([
-      Deck(
-        id: '4',
-        name: 'Food & Restaurants',
-        description: 'Ordering food and menu items',
-        category: 'Food',
-        totalCards: 30,
-        masteredCards: 12,
-        difficulty: 'Beginner',
-        rating: 4.7,
-      ),
-    ]);
+    try {
+      final stats = await _userService.getUserStats();
+      setState(() {
+        _userStats = stats;
+        _isLoading = false;
+      });
+    } catch (e) {
+      print('Error loading home data: $e');
+      setState(() => _isLoading = false);
+    }
   }
+
+  // Getters for data with fallback to AuthService or 0
+  String get userName => _authService.userName.split(' ').first;
+  int get currentStreak => _userStats?['currentStreak'] ?? _authService.userStreak;
+  int get totalCardsLearned => _userStats?['totalCardsLearned'] ?? 0;
+  int get totalGrammarCards => _userStats?['totalGrammarCards'] ?? 0;
+  int get totalQuizzes => _userStats?['totalQuizzesCompleted'] ?? 0;
+  int get totalDictation => _userStats?['totalDictationResults'] ?? 0;
+  int get totalShadowing => _userStats?['totalShadowingResults'] ?? 0;
+  
+  // Daily goal - can be fetched from API or calculated
+  int get targetMinutes => 20;
+  int get completedMinutes => 12; // TODO: Get from daily activity
+  int get targetCards => 10;
+  int get completedCards => 6; // TODO: Get from daily activity
+  double get dailyProgress => (completedMinutes / targetMinutes).clamp(0.0, 1.0);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       body: SafeArea(
-        child: CustomScrollView(
-          slivers: [
-            // Header
-            SliverToBoxAdapter(
-              child: _buildHeader(),
-            ),
-            
-            // Hero Card
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-                child: _buildHeroCard(),
+        child: RefreshIndicator(
+          onRefresh: _loadUserData,
+          child: CustomScrollView(
+            slivers: [
+              // Header
+              SliverToBoxAdapter(
+                child: _buildHeader(),
               ),
-            ),
-            
-            // Quick Actions
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
-                child: _buildQuickActions(),
+
+              // Hero Card
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                  child: _buildHeroCard(),
+                ),
               ),
-            ),
-            
-            // Stats
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
-                child: _buildQuickStats(),
-              ),
-            ),
-            
-            // Recommended Decks
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
-                child: _buildRecommendedDecks(),
-              ),
-            ),
-            
-            // Continue Learning
-            if (_recentDecks.isNotEmpty)
+
+              // Quick Actions (2x2 Grid)
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
-                  child: _buildContinueLearning(),
+                  child: _buildQuickActions(),
                 ),
               ),
-            
-            // Bottom spacing
-            const SliverToBoxAdapter(
-              child: SizedBox(height: 32),
-            ),
-          ],
+
+              // Stats
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
+                  child: _buildQuickStats(),
+                ),
+              ),
+
+              // Bottom spacing
+              const SliverToBoxAdapter(
+                child: SizedBox(height: 32),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -204,7 +135,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Hi, ${_currentUser.firstName}! 👋',
+                  'Hi, $userName!',
                   style: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
@@ -240,10 +171,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.local_fire_department, color: Colors.white, size: 18),
+                const Icon(Icons.local_fire_department,
+                    color: Colors.white, size: 18),
                 const SizedBox(width: 4),
                 Text(
-                  '${_currentUser.currentStreak}',
+                  '$currentStreak',
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
@@ -259,8 +191,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   }
 
   Widget _buildHeroCard() {
-    final progress = _dailyGoal.progressPercentage;
-    
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -297,7 +227,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      '${_dailyGoal.completedMinutes}/${_dailyGoal.targetMinutes} phút • ${_dailyGoal.completedCards}/${_dailyGoal.targetCards} thẻ',
+                      '$completedMinutes/$targetMinutes phút • $completedCards/$targetCards thẻ',
                       style: TextStyle(
                         color: Colors.white.withOpacity(0.9),
                         fontSize: 14,
@@ -320,14 +250,15 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                       width: 50,
                       height: 50,
                       child: CircularProgressIndicator(
-                        value: progress,
+                        value: dailyProgress,
                         strokeWidth: 5,
                         backgroundColor: Colors.white.withOpacity(0.3),
-                        valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+                        valueColor:
+                            const AlwaysStoppedAnimation<Color>(Colors.white),
                       ),
                     ),
                     Text(
-                      '${(progress * 100).toInt()}%',
+                      '${(dailyProgress * 100).toInt()}%',
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 14,
@@ -343,7 +274,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           ClipRRect(
             borderRadius: BorderRadius.circular(12),
             child: LinearProgressIndicator(
-              value: progress,
+              value: dailyProgress,
               minHeight: 8,
               backgroundColor: Colors.white.withOpacity(0.3),
               valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
@@ -353,7 +284,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: () {},
+              onPressed: () {
+                // Navigate to study section
+              },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.white,
                 foregroundColor: const Color(0xFF6366F1),
@@ -378,6 +311,41 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   }
 
   Widget _buildQuickActions() {
+    final actions = [
+      {
+        'id': 'flashcards',
+        'title': 'Flashcard',
+        'subtitle': 'Học từ vựng',
+        'icon': Icons.style_outlined,
+        'color': const Color(0xFF6366F1),
+        'pendingItems': 8, // TODO: Get from API
+      },
+      {
+        'id': 'grammar',
+        'title': 'Grammar',
+        'subtitle': 'Ngữ pháp',
+        'icon': Icons.school_outlined,
+        'color': const Color(0xFF8B5CF6),
+        'pendingItems': 3,
+      },
+      {
+        'id': 'dictation',
+        'title': 'Dictation',
+        'subtitle': 'Luyện nghe',
+        'icon': Icons.headphones_outlined,
+        'color': const Color(0xFF10B981),
+        'pendingItems': totalDictation,
+      },
+      {
+        'id': 'shadowing',
+        'title': 'Shadowing',
+        'subtitle': 'Luyện nói',
+        'icon': Icons.record_voice_over_outlined,
+        'color': const Color(0xFFF59E0B),
+        'pendingItems': totalShadowing,
+      },
+    ];
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -390,61 +358,80 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           ),
         ),
         const SizedBox(height: 16),
-        Row(
-          children: _quickActions.asMap().entries.map((entry) {
-            final index = entry.key;
-            final action = entry.value;
-            return Expanded(
-              child: Padding(
-                padding: EdgeInsets.only(
-                  right: index < _quickActions.length - 1 ? 12 : 0,
+        // Grid 2x2
+        Column(
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: _buildQuickActionCard(actions[0]),
                 ),
-                child: _buildQuickActionItem(action),
-              ),
-            );
-          }).toList(),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildQuickActionCard(actions[1]),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildQuickActionCard(actions[2]),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildQuickActionCard(actions[3]),
+                ),
+              ],
+            ),
+          ],
         ),
       ],
     );
   }
 
-  Widget _buildQuickActionItem(QuickAction action) {
+  Widget _buildQuickActionCard(Map<String, dynamic> action) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: () {
-        // Navigate based on action id
-        switch (action.id) {
-          case 'dictation':
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const DictationScreen(),
-              ),
-            );
-            break;
-          case 'flashcards':
-            // TODO: Navigate to Flashcard screen
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Flashcard screen coming soon!')),
-            );
-            break;
-          case 'grammar':
-            // TODO: Navigate to Grammar screen
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Grammar screen coming soon!')),
-            );
-            break;
-          case 'shadowing':
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const ShadowingListScreen(),
-              ),
-            );
-            break;
-        }
-      },
+          switch (action['id']) {
+            case 'dictation':
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const DictationScreen(),
+                ),
+              );
+              break;
+            case 'flashcards':
+              Get.snackbar(
+                'Thông báo',
+                'Tính năng Flashcard đang được phát triển',
+                snackPosition: SnackPosition.TOP,
+                backgroundColor: const Color(0xFF6366F1),
+                colorText: Colors.white,
+              );
+              break;
+            case 'grammar':
+              Get.snackbar(
+                'Thông báo',
+                'Tính năng Grammar đang được phát triển',
+                snackPosition: SnackPosition.TOP,
+                backgroundColor: const Color(0xFF8B5CF6),
+                colorText: Colors.white,
+              );
+              break;
+            case 'shadowing':
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ShadowingListScreen(),
+                ),
+              );
+              break;
+          }
+        },
         borderRadius: BorderRadius.circular(16),
         child: Container(
           padding: const EdgeInsets.all(16),
@@ -461,46 +448,40 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             ],
           ),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Stack(
-                clipBehavior: Clip.none,
+              Row(
                 children: [
                   Container(
                     width: 48,
                     height: 48,
                     decoration: BoxDecoration(
-                      color: action.color.withOpacity(0.1),
+                      color: (action['color'] as Color).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(
-                      action.icon,
-                      color: action.color,
+                      action['icon'] as IconData,
+                      color: action['color'] as Color,
                       size: 24,
                     ),
                   ),
-                  if (action.pendingItems > 0)
-                    Positioned(
-                      right: -4,
-                      top: -4,
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: const BoxDecoration(
-                          color: Color(0xFFEF4444),
-                          shape: BoxShape.circle,
-                        ),
-                        constraints: const BoxConstraints(
-                          minWidth: 20,
-                          minHeight: 20,
-                        ),
-                        child: Center(
-                          child: Text(
-                            action.pendingItems.toString(),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
+                  const Spacer(),
+                  if (action['pendingItems'] > 0)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEF4444),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        action['pendingItems'].toString(),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
@@ -508,13 +489,22 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               ),
               const SizedBox(height: 12),
               Text(
-                action.title,
+                action['title'] as String,
                 style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF475569),
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1E293B),
                 ),
-                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                action['subtitle'] as String,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[600],
+                ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -527,64 +517,26 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   Widget _buildQuickStats() {
     final stats = [
-      {'value': '234', 'label': 'Từ vựng', 'icon': Icons.style_outlined, 'color': const Color(0xFF6366F1)},
-      {'value': '12', 'label': 'Ngữ pháp', 'icon': Icons.school_outlined, 'color': const Color(0xFF8B5CF6)},
-      {'value': '${_currentUser.currentStreak}', 'label': 'Chuỗi ngày', 'icon': Icons.local_fire_department, 'color': const Color(0xFFEF4444)},
+      {
+        'value': totalCardsLearned.toString(),
+        'label': 'Từ vựng',
+        'icon': Icons.style_outlined,
+        'color': const Color(0xFF6366F1)
+      },
+      {
+        'value': totalGrammarCards.toString(),
+        'label': 'Ngữ pháp',
+        'icon': Icons.school_outlined,
+        'color': const Color(0xFF8B5CF6)
+      },
+      {
+        'value': currentStreak.toString(),
+        'label': 'Chuỗi ngày',
+        'icon': Icons.local_fire_department,
+        'color': const Color(0xFFEF4444)
+      },
     ];
 
-    return Row(
-      children: stats.asMap().entries.map((entry) {
-        final index = entry.key;
-        final stat = entry.value;
-        return Expanded(
-          child: Padding(
-            padding: EdgeInsets.only(
-              right: index < stats.length - 1 ? 12 : 0,
-            ),
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.grey[200]!),
-              ),
-              child: Column(
-                children: [
-                  Icon(
-                    stat['icon'] as IconData,
-                    color: stat['color'] as Color,
-                    size: 24,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    stat['value'] as String,
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF1E293B),
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    stat['label'] as String,
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: Colors.grey[600],
-                    ),
-                    textAlign: TextAlign.center,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      }).toList(),
-    );
-  }
-
-  Widget _buildRecommendedDecks() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -592,7 +544,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             const Text(
-              'Đề xuất cho bạn',
+              'Thống kê',
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
@@ -600,257 +552,80 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               ),
             ),
             TextButton(
-              onPressed: () {},
+              onPressed: () {
+                // Navigate to profile tab
+                DefaultTabController.of(context)?.animateTo(3);
+              },
               child: const Text(
-                'Xem tất cả',
+                'Xem chi tiết',
                 style: TextStyle(
                   color: Color(0xFF6366F1),
                   fontWeight: FontWeight.w600,
+                  fontSize: 14,
                 ),
               ),
             ),
           ],
         ),
         const SizedBox(height: 16),
-        SizedBox(
-          height: 220, // Tăng từ 200 lên 220 để tránh overflow
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: _recommendedDecks.length,
-            itemBuilder: (context, index) {
-              return Padding(
+        Row(
+          children: stats.asMap().entries.map((entry) {
+            final index = entry.key;
+            final stat = entry.value;
+            return Expanded(
+              child: Padding(
                 padding: EdgeInsets.only(
-                  right: index < _recommendedDecks.length - 1 ? 16 : 0,
+                  right: index < stats.length - 1 ? 12 : 0,
                 ),
-                child: _buildDeckCard(_recommendedDecks[index]),
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildDeckCard(Deck deck) {
-    return GestureDetector(
-      onTap: () {},
-      child: Container(
-        width: 280,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey[200]!),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              height: 100,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    const Color(0xFF6366F1).withOpacity(0.8),
-                    const Color(0xFF8B5CF6).withOpacity(0.8),
-                  ],
-                ),
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-              ),
-              child: Center(
-                child: Icon(
-                  Icons.school_outlined,
-                  color: Colors.white,
-                  size: 40,
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(12), // Giảm từ 16 xuống 12
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    deck.name,
-                    style: const TextStyle(
-                      fontSize: 15, // Giảm từ 16 xuống 15
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF1E293B),
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    deck.description,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                      height: 1.3, // Giảm line height
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 8), // Giảm từ 12 xuống 8
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: _getDifficultyColor(deck.difficulty).withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          deck.difficulty,
-                          style: TextStyle(
-                            color: _getDifficultyColor(deck.difficulty),
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                      const Spacer(),
-                      const Icon(Icons.star, color: Colors.amber, size: 14),
-                      const SizedBox(width: 4),
-                      Text(
-                        deck.rating.toString(),
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.grey[200]!),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.03),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
                       ),
                     ],
                   ),
-                ],
+                  child: Column(
+                    children: [
+                      Icon(
+                        stat['icon'] as IconData,
+                        color: stat['color'] as Color,
+                        size: 24,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        stat['value'] as String,
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1E293B),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        stat['label'] as String,
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey[600],
+                        ),
+                        textAlign: TextAlign.center,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
               ),
-            ),
-          ],
+            );
+          }).toList(),
         ),
-      ),
-    );
-  }
-
-  Color _getDifficultyColor(String difficulty) {
-    switch (difficulty.toLowerCase()) {
-      case 'beginner':
-        return const Color(0xFF10B981);
-      case 'intermediate':
-        return const Color(0xFFF59E0B);
-      case 'advanced':
-        return const Color(0xFFEF4444);
-      default:
-        return Colors.grey;
-    }
-  }
-
-  Widget _buildContinueLearning() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Tiếp tục học',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF1E293B),
-          ),
-        ),
-        const SizedBox(height: 16),
-        ..._recentDecks.map((deck) => Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: _buildRecentDeckItem(deck),
-        )),
       ],
-    );
-  }
-
-  Widget _buildRecentDeckItem(Deck deck) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey[200]!),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  const Color(0xFF6366F1).withOpacity(0.8),
-                  const Color(0xFF8B5CF6).withOpacity(0.8),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(
-              Icons.school_outlined,
-              color: Colors.white,
-              size: 28,
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  deck.name,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF1E293B),
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 8),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: LinearProgressIndicator(
-                    value: deck.progress,
-                    minHeight: 6,
-                    backgroundColor: Colors.grey[200],
-                    valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF6366F1)),
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '${(deck.progress * 100).toInt()}% hoàn thành',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: const Color(0xFF6366F1).withOpacity(0.1),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Icon(
-              Icons.play_arrow,
-              color: Color(0xFF6366F1),
-              size: 24,
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

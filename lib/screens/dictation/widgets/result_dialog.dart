@@ -7,6 +7,7 @@ class ResultDialog extends StatelessWidget {
   final int correctAnswers;
   final int totalQuestions;
   final int timeSpent;
+  final int? scoreEarned;
   final VoidCallback onRetry;
   final VoidCallback onClose;
 
@@ -17,41 +18,49 @@ class ResultDialog extends StatelessWidget {
     required this.correctAnswers,
     required this.totalQuestions,
     required this.timeSpent,
+    this.scoreEarned,
     required this.onRetry,
     required this.onClose,
   });
-
-  String _getFeedback(double accuracy) {
-    if (accuracy >= 90) return 'Xuất sắc! Bạn nghe rất tốt! 🌟';
-    if (accuracy >= 80) return 'Rất tốt! Tiếp tục phát huy! 👏';
-    if (accuracy >= 70) return 'Tốt! Bạn đang tiến bộ! 👍';
-    if (accuracy >= 60) return 'Khá! Hãy luyện tập thêm! 💪';
-    return 'Cố gắng hơn nữa! Luyện tập làm nên thành công! 📚';
-  }
-
-  Color _getAccuracyColor(double accuracy) {
-    if (accuracy >= 90) return const Color(0xFF10B981);
-    if (accuracy >= 80) return const Color(0xFFF59E0B);
-    if (accuracy >= 60) return const Color(0xFFF59E0B);
-    return const Color(0xFFEF4444);
-  }
 
   @override
   Widget build(BuildContext context) {
     return Dialog(
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(24),
       ),
-      child: Padding(
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 400),
         padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Title
+            // Success Icon
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    _getAccuracyColor(accuracy),
+                    _getAccuracyColor(accuracy).withOpacity(0.7),
+                  ],
+                ),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                _getAccuracyIcon(accuracy),
+                color: Colors.white,
+                size: 40,
+              ),
+            ),
+            
+            const SizedBox(height: 16),
+            
             Text(
               title,
               style: const TextStyle(
-                fontSize: 20,
+                fontSize: 24,
                 fontWeight: FontWeight.bold,
                 color: Color(0xFF1E293B),
               ),
@@ -60,86 +69,128 @@ class ResultDialog extends StatelessWidget {
             
             const SizedBox(height: 24),
             
-            // Accuracy Circle
-            Stack(
-              alignment: Alignment.center,
-              children: [
-                SizedBox(
-                  width: 120,
-                  height: 120,
-                  child: CircularProgressIndicator(
-                    value: accuracy / 100,
-                    strokeWidth: 8,
-                    backgroundColor: Colors.grey[200],
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      _getAccuracyColor(accuracy),
+            // Score Circle
+            Container(
+              width: 160,
+              height: 160,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  SizedBox(
+                    width: 160,
+                    height: 160,
+                    child: CircularProgressIndicator(
+                      value: accuracy / 100,
+                      strokeWidth: 12,
+                      backgroundColor: Colors.grey[200],
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        _getAccuracyColor(accuracy),
+                      ),
                     ),
                   ),
-                ),
-                Column(
-                  children: [
-                    Text(
-                      '${accuracy.toStringAsFixed(0)}%',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: _getAccuracyColor(accuracy),
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        '${accuracy.toStringAsFixed(0)}%',
+                        style: TextStyle(
+                          fontSize: 36,
+                          fontWeight: FontWeight.bold,
+                          color: _getAccuracyColor(accuracy),
+                        ),
                       ),
-                    ),
-                    Text(
-                      'Độ chính xác',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[600],
+                      const Text(
+                        'Độ chính xác',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey,
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-              ],
+                    ],
+                  ),
+                ],
+              ),
             ),
             
             const SizedBox(height: 24),
             
             // Stats
+            Row(
+              children: [
+                Expanded(
+                  child: _buildStatCard(
+                    icon: Icons.check_circle,
+                    label: 'Đúng',
+                    value: correctAnswers.toString(),
+                    color: const Color(0xFF10B981),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildStatCard(
+                    icon: Icons.cancel,
+                    label: 'Sai',
+                    value: (totalQuestions - correctAnswers).toString(),
+                    color: const Color(0xFFEF4444),
+                  ),
+                ),
+              ],
+            ),
+            
+            const SizedBox(height: 12),
+            
+            Row(
+              children: [
+                Expanded(
+                  child: _buildStatCard(
+                    icon: Icons.timer,
+                    label: 'Thời gian',
+                    value: _formatTime(timeSpent),
+                    color: const Color(0xFF6366F1),
+                  ),
+                ),
+              
+                if (scoreEarned != null) ...[
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildStatCard(
+                      icon: Icons.stars,
+                      label: 'Điểm',
+                      value: '$scoreEarned XP',
+                      color: const Color(0xFFF59E0B),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+            
+            const SizedBox(height: 24),
+            
+            // Motivational Message
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: const Color(0xFFF8FAFC),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                children: [
-                  _buildStatRow('Từ đúng:', '$correctAnswers/$totalQuestions'),
-                  const SizedBox(height: 8),
-                  _buildStatRow('Thời gian:', '${timeSpent ~/ 60}:${(timeSpent % 60).toString().padLeft(2, '0')}'),
-                  const SizedBox(height: 8),
-                  _buildStatRow('Tốc độ:', '${(totalQuestions / timeSpent * 60).toStringAsFixed(1)} từ/phút'),
-                ],
-              ),
-            ),
-            
-            const SizedBox(height: 20),
-            
-            // Feedback
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
                 color: _getAccuracyColor(accuracy).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: _getAccuracyColor(accuracy).withOpacity(0.3),
+                ),
               ),
               child: Row(
                 children: [
                   Icon(
-                    Icons.emoji_events,
+                    _getMotivationIcon(accuracy),
                     color: _getAccuracyColor(accuracy),
+                    size: 24,
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      _getFeedback(accuracy),
+                      _getMotivationMessage(accuracy),
                       style: TextStyle(
+                        fontSize: 14,
                         color: _getAccuracyColor(accuracy),
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
@@ -149,26 +200,20 @@ class ResultDialog extends StatelessWidget {
             
             const SizedBox(height: 24),
             
-            // Buttons
+            // Action Buttons
             Row(
               children: [
                 Expanded(
                   child: OutlinedButton(
                     onPressed: onRetry,
                     style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
                       side: const BorderSide(color: Color(0xFF6366F1)),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    child: const Text(
-                      'Làm Lại',
-                      style: TextStyle(
-                        color: Color(0xFF6366F1),
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                    child: const Text('Thử Lại'),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -177,17 +222,14 @@ class ResultDialog extends StatelessWidget {
                     onPressed: onClose,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF6366F1),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
                     child: const Text(
                       'Hoàn Thành',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                      ),
+                      style: TextStyle(color: Colors.white),
                     ),
                   ),
                 ),
@@ -199,26 +241,77 @@ class ResultDialog extends StatelessWidget {
     );
   }
 
-  Widget _buildStatRow(String label, String value) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            color: Colors.grey[600],
-            fontSize: 14,
+  Widget _buildStatCard({
+    required IconData icon,
+    required String label,
+    required String value,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, color: color, size: 24),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
           ),
-        ),
-        Text(
-          value,
-          style: const TextStyle(
-            color: Color(0xFF1E293B),
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              color: Colors.grey[600],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
+  }
+
+  Color _getAccuracyColor(double accuracy) {
+    if (accuracy >= 80) return const Color(0xFF10B981);
+    if (accuracy >= 60) return const Color(0xFFF59E0B);
+    return const Color(0xFFEF4444);
+  }
+
+  IconData _getAccuracyIcon(double accuracy) {
+    if (accuracy >= 80) return Icons.emoji_events;
+    if (accuracy >= 60) return Icons.thumb_up;
+    return Icons.trending_up;
+  }
+
+  IconData _getMotivationIcon(double accuracy) {
+    if (accuracy >= 80) return Icons.stars;
+    if (accuracy >= 60) return Icons.thumb_up;
+    return Icons.sentiment_satisfied;
+  }
+
+  String _getMotivationMessage(double accuracy) {
+    if (accuracy >= 80) {
+      return 'Xuất sắc! Bạn đã làm rất tốt! 🌟';
+    } else if (accuracy >= 60) {
+      return 'Tốt lắm! Tiếp tục phát huy nhé! 👍';
+    } else {
+      return 'Đừng nản chí! Luyện tập thêm sẽ tiến bộ! 💪';
+    }
+  }
+
+  String _formatTime(int seconds) {
+    final minutes = seconds ~/ 60;
+    final secs = seconds % 60;
+    if (minutes > 0) {
+      return '${minutes}m ${secs}s';
+    }
+    return '${secs}s';
   }
 }
