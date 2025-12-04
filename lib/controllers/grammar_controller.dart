@@ -57,20 +57,19 @@ class GrammarController extends GetxController {
   void nextCard(bool understood) {
     if (understood) {
       understoodCount.value++;
+      print('Understood count: ${understoodCount.value}');
     } else {
       notUnderstoodCount.value++;
+      print('Not understood count: ${notUnderstoodCount.value}');
     }
+
+    print('Total cards: ${grammarCards.length}, Current: ${currentIndex.value + 1}');
 
     if (currentIndex.value < grammarCards.length - 1) {
       currentIndex.value++;
     } else {
-      // Completed
-      Get.back();
-      Get.snackbar(
-        'Hoàn thành! 🎉',
-        'Hiểu rồi: ${understoodCount.value}/${grammarCards.length}',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      // Completed - DON'T auto close here, let UI handle it
+      print('Study session completed');
     }
   }
 

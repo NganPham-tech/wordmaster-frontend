@@ -3,6 +3,7 @@ import '../data/models/deck_model.dart';
 import '../data/models/flashcard_model.dart';
 import '../data/models/grammar_card_model.dart';
 import '../data/models/shadowing_model.dart';
+import 'auth_service.dart';
 
 class ApiService extends GetConnect {
   static ApiService? _instance;
@@ -20,6 +21,15 @@ class ApiService extends GetConnect {
     httpClient.defaultContentType = 'application/json';
 
     httpClient.addRequestModifier<dynamic>((request) {
+      // Add authorization header if user is logged in
+      if (Get.isRegistered<AuthService>()) {
+        final authService = AuthService.instance;
+        final token = authService.token.value;
+        if (token != null && token.isNotEmpty) {
+          request.headers['Authorization'] = 'Bearer $token';
+        }
+      }
+      
       print('REQUEST: ${request.method} ${request.url}');
       return request;
     });

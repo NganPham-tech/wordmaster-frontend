@@ -23,30 +23,34 @@ class QuizIndexScreen extends StatelessWidget {
         centerTitle: true,
       ),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Kiểm tra kiến thức',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF1E293B),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  minHeight: constraints.maxHeight,
                 ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Thử thách bản thân với các câu hỏi trắc nghiệm',
-                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-              ),
-              const SizedBox(height: 32),
-              Expanded(
-                child: Column(
-                  children: [
-                    Expanded(
-                      child: _buildQuizTypeCard(
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text(
+                        'Kiểm tra kiến thức',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1E293B),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Thử thách bản thân với các câu hỏi trắc nghiệm',
+                        style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                      ),
+                      const SizedBox(height: 24),
+                      _buildQuizTypeCard(
                         context: context,
                         icon: Icons.quiz_outlined,
                         title: 'Quiz Topics',
@@ -56,17 +60,26 @@ class QuizIndexScreen extends StatelessWidget {
                           end: Alignment.bottomRight,
                           colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
                         ),
-                        emoji: '🎯',
+                        iconWidget: Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: const Icon(
+                            Icons.quiz,
+                            color: Colors.white,
+                            size: 28,
+                          ),
+                        ),
                         stats: 'Có sẵn nhiều chủ đề',
                         onTap: () {
                           HapticFeedback.mediumImpact();
                           Get.to(() => const QuizTopicsScreen());
                         },
                       ),
-                    ),
-                    const SizedBox(height: 20),
-                    Expanded(
-                      child: _buildQuizTypeCard(
+                      const SizedBox(height: 20),
+                      _buildQuizTypeCard(
                         context: context,
                         icon: Icons.leaderboard,
                         title: 'Leaderboard',
@@ -76,7 +89,18 @@ class QuizIndexScreen extends StatelessWidget {
                           end: Alignment.bottomRight,
                           colors: [Color(0xFFF59E0B), Color(0xFFEF4444)],
                         ),
-                        emoji: '🏆',
+                        iconWidget: Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: const Icon(
+                            Icons.emoji_events,
+                            color: Colors.white,
+                            size: 28,
+                          ),
+                        ),
                         stats: 'Coming soon',
                         onTap: () {
                           HapticFeedback.mediumImpact();
@@ -88,12 +112,12 @@ class QuizIndexScreen extends StatelessWidget {
                           );
                         },
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );
@@ -105,7 +129,7 @@ class QuizIndexScreen extends StatelessWidget {
     required String title,
     required String subtitle,
     required Gradient gradient,
-    required String emoji,
+    required Widget iconWidget,
     required String stats,
     required VoidCallback onTap,
   }) {
@@ -113,6 +137,10 @@ class QuizIndexScreen extends StatelessWidget {
       onTap: onTap,
       child: Container(
         width: double.infinity,
+        constraints: const BoxConstraints(
+          minHeight: 200,
+          maxHeight: 250,
+        ),
         decoration: BoxDecoration(
           gradient: gradient,
           borderRadius: BorderRadius.circular(24),
@@ -131,8 +159,8 @@ class QuizIndexScreen extends StatelessWidget {
               right: -20,
               top: -20,
               child: Container(
-                width: 150,
-                height: 150,
+                width: 120,
+                height: 120,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: Colors.white.withOpacity(0.1),
@@ -143,8 +171,8 @@ class QuizIndexScreen extends StatelessWidget {
               right: 40,
               bottom: -30,
               child: Container(
-                width: 120,
-                height: 120,
+                width: 100,
+                height: 100,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: Colors.white.withOpacity(0.05),
@@ -153,71 +181,81 @@ class QuizIndexScreen extends StatelessWidget {
             ),
             // Content
             Padding(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(emoji, style: const TextStyle(fontSize: 48)),
-                  const SizedBox(height: 16),
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    subtitle,
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.9),
-                      fontSize: 14,
-                      height: 1.5,
-                    ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      iconWidget,
+                      const SizedBox(height: 12),
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        subtitle,
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.9),
+                          fontSize: 13,
+                          height: 1.4,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 10),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          stats,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 12),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      stats,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                  const Spacer(),
                   Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       const Text(
                         'Bắt đầu',
                         style: TextStyle(
                           color: Colors.white,
-                          fontSize: 16,
+                          fontSize: 15,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                       const SizedBox(width: 8),
                       Container(
-                        padding: const EdgeInsets.all(8),
+                        padding: const EdgeInsets.all(6),
                         decoration: BoxDecoration(
                           color: Colors.white.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(8),
                         ),
                         child: const Icon(
                           Icons.arrow_forward,
                           color: Colors.white,
-                          size: 20,
+                          size: 18,
                         ),
                       ),
                     ],

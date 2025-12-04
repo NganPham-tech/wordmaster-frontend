@@ -99,28 +99,28 @@ class TtsService {
     }
   }
 
-  // Dừng phát âm
+
   static Future<void> stop() async {
     if (_flutterTts != null) {
       await _flutterTts!.stop();
     }
   }
 
-  // Tạm dừng phát âm
+ 
   static Future<void> pause() async {
     if (_flutterTts != null) {
       await _flutterTts!.pause();
     }
   }
 
-  // Thiết lập ngôn ngữ
+
   static Future<void> setLanguage(String language) async {
     if (_flutterTts != null) {
       await _flutterTts!.setLanguage(language);
     }
   }
 
-  // Thiết lập tốc độ phát âm (0.0 - 1.0)
+
   static Future<void> setSpeechRate(double rate) async {
     if (_flutterTts != null) {
       print('TTS: Setting speech rate to $rate');
@@ -131,7 +131,7 @@ class TtsService {
     }
   }
 
-  // Thiết lập âm lượng (0.0 - 1.0)
+
   static Future<void> setVolume(double volume) async {
     if (_flutterTts != null) {
       await _flutterTts!.setVolume(volume);

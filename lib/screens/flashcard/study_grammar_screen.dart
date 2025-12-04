@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../../controllers/grammar_controller.dart';
+import '../../services/learning_session_service.dart';
 import 'result_screen.dart';
-
+import 'widgets/feynman_dialog.dart';
+import 'widgets/feynman_note_display.dart';
 class StudyGrammarScreen extends StatefulWidget {
   final int topicId;
   final String topicName;
@@ -26,13 +28,18 @@ class _StudyGrammarScreenState extends State<StudyGrammarScreen>
   final RxBool _isFlipped = false.obs;
 
   final grammarController = Get.find<GrammarController>();
+  final _sessionService = LearningSessionService.instance;
+  int? _sessionId;
 
   @override
   void initState() {
     super.initState();
     
     // Fetch grammar cards for this deck
-    grammarController.fetchGrammarCardsByDeck(widget.topicId);
+    grammarController.fetchGrammarCardsByDeck(widget.topicId).then((_) {
+      // Start learning session sau khi load cards thành công
+      _startLearningSession();
+    });
     
     _controller = AnimationController(
       vsync: this,
@@ -43,8 +50,48 @@ class _StudyGrammarScreenState extends State<StudyGrammarScreen>
     );
   }
 
+  Future<void> _startLearningSession() async {
+    _sessionId = await _sessionService.startSession(
+      contentType: 'Grammar',
+      contentId: widget.topicId,
+      mode: 'Flashcard Study',
+      totalItems: grammarController.grammarCards.length,
+    );
+  }
+
+  Future<void> _completeSession() async {
+    if (_sessionId != null) {
+      final score = grammarController.grammarCards.isNotEmpty 
+          ? (grammarController.understoodCount.value / grammarController.grammarCards.length * 100)
+          : 0.0;
+          
+      await _sessionService.completeSession(
+        sessionId: _sessionId,
+        completedItems: grammarController.currentIndex.value + 1, // +1 vì index bắt đầu từ 0
+        score: score,
+      );
+      _sessionId = null; // Clear session ID
+    }
+  }
+
+  void _updateSessionProgress() {
+    if (_sessionId != null) {
+      final score = grammarController.grammarCards.isNotEmpty 
+          ? (grammarController.understoodCount.value / grammarController.grammarCards.length * 100)
+          : 0.0;
+          
+      _sessionService.updateProgress(
+        sessionId: _sessionId,
+        completedItems: grammarController.currentIndex.value + 1,
+        score: score,
+      );
+    }
+  }
+
   @override
   void dispose() {
+    // Complete session nếu chưa complete
+    _completeSession();
     _controller.dispose();
     super.dispose();
   }
@@ -59,19 +106,54 @@ class _StudyGrammarScreenState extends State<StudyGrammarScreen>
   }
 
   void _nextCard(bool understood) {
-    HapticFeedback.mediumImpact();
-    
-    final isLastCard = grammarController.currentIndex.value >= 
-        grammarController.grammarCards.length - 1;
+  HapticFeedback.mediumImpact();
+  
+  final currentCard = grammarController.currentCard;
+  final isLastCard = grammarController.currentIndex.value >= 
+      grammarController.grammarCards.length - 1;
 
-    if (isLastCard) {
-      _showCompletionDialog();
-    } else {
-      grammarController.nextCard(understood);
-      _isFlipped.value = false;
-      _controller.reset();
+  // LUÔN update count trước khi hiển thị dialog
+  grammarController.nextCard(understood);
+  
+  // Update session progress
+  _updateSessionProgress();
+  
+  if (isLastCard) {
+    // Hiển thị completion dialog sau khi đã update count
+    _showCompletionDialog();
+  } else {
+    // Reset UI cho card tiếp theo
+    _isFlipped.value = false;
+    _controller.reset();
+    
+    // Kiểm tra điều kiện hiển thị Feynman dialog
+    // Trigger Feynman sau mỗi 5 thẻ "hiểu rồi"
+    final shouldShowFeynman = understood && 
+        grammarController.understoodCount.value > 0 && 
+        grammarController.understoodCount.value % 5 == 0;
+    
+    if (shouldShowFeynman && currentCard != null) {
+      print('Triggering Feynman after ${grammarController.understoodCount.value} understood cards');
+      _showFeynmanDialog(currentCard);
     }
   }
+}
+
+void _showFeynmanDialog(dynamic card) {
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (context) => FeynmanDialog(
+      cardType: 'Grammar',
+      cardId: card.id,
+      cardTitle: card.title,
+      onSaved: () {
+        // Sau khi lưu xong, không cần làm gì thêm vì đã nextCard() rồi
+        print('Feynman note saved for card: ${card.title}');
+      },
+    ),
+  );
+}
 
   void _showCompletionDialog() {
     Get.dialog(
@@ -127,14 +209,18 @@ class _StudyGrammarScreenState extends State<StudyGrammarScreen>
         )),
         actions: [
           TextButton(
-            onPressed: () {
+            onPressed: () async {
+              // Complete session trước khi về danh sách
+              await _completeSession();
               Get.back(); // Close dialog
               Get.back(); // Back to list
             },
             child: const Text('Về danh sách'),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
+              // Complete session trước khi xem kết quả
+              await _completeSession();
               Get.back(); // Close dialog
               Get.off(() => ResultScreen(
                 title: widget.topicName,
@@ -463,14 +549,18 @@ class _StudyGrammarScreenState extends State<StudyGrammarScreen>
               ),
             ),
             const SizedBox(height: 20),
-            Text(
-              card.title,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
+            Flexible(
+              child: Text(
+                card.title,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+                overflow: TextOverflow.ellipsis,
+                maxLines: 3,
               ),
-              textAlign: TextAlign.center,
             ),
             const SizedBox(height: 40),
             if (card.structure != null) ...[
@@ -704,6 +794,11 @@ class _StudyGrammarScreenState extends State<StudyGrammarScreen>
                 ),
               ),
             ],
+             FeynmanNoteDisplay(
+              cardType: 'Grammar',
+              cardId: card.id,
+              accentColor: const Color(0xFF10B981),
+            ),
           ],
         ),
       ),

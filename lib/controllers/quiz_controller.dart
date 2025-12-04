@@ -8,7 +8,7 @@ class QuizController extends GetxController {
   final RxList<QuizQuestion> currentQuestions = <QuizQuestion>[].obs;
   final RxList<int> userAnswers = <int>[].obs;
   final RxMap<int, String> userTextAnswers =
-      <int, String>{}.obs; // Thêm để lưu text answers
+      <int, String>{}.obs;
   final Rxn<QuizTopic> currentTopic = Rxn<QuizTopic>();
   final RxInt currentQuestionIndex = 0.obs;
   final RxBool isLoading = false.obs;
