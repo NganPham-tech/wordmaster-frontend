@@ -29,7 +29,7 @@ class ApiService extends GetConnect {
           request.headers['Authorization'] = 'Bearer $token';
         }
       }
-      
+
       print('REQUEST: ${request.method} ${request.url}');
       return request;
     });
