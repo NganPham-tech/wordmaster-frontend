@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import '/data/models/shadowing_model.dart';
+import 'dart:async';
 import 'widgets/segment_tile.dart';
 import 'widgets/record_button.dart';
 import 'widgets/audio_wave.dart';
 import 'shadowing_result_screen.dart';
+
 //D:\DemoDACN\wordmaster_dacn\lib\screens\shadowing\shadowing_player_screen.dart
 class ShadowingPlayerScreen extends StatefulWidget {
-  final ShadowingContent content;
+  final ShadowingContentDetail content;
 
   const ShadowingPlayerScreen({super.key, required this.content});
 
@@ -15,14 +17,13 @@ class ShadowingPlayerScreen extends StatefulWidget {
 }
 
 class _ShadowingPlayerScreenState extends State<ShadowingPlayerScreen> {
-  final List<Segment> _segments = [];
+  final List<ShadowingSegment> _segments = [];
   int _currentSegmentIndex = 0;
   bool _isPlaying = false;
   double _playbackSpeed = 1.0;
   bool _isLooping = false;
   RecordState _recordState = RecordState.idle;
-  Segment? _currentRecordingSegment;
-  // String? _currentRecordingPath; // Removed unused field
+  ShadowingSegment? _currentRecordingSegment;
   final Map<String, SegmentResult> _segmentResults = {};
 
   @override
@@ -31,17 +32,17 @@ class _ShadowingPlayerScreenState extends State<ShadowingPlayerScreen> {
     _segments.addAll(widget.content.segments);
   }
 
-  void _playSegment(Segment segment) {
+  void _playSegment(ShadowingSegment segment) {
     setState(() {
-      _currentSegmentIndex = segment.index;
+      _currentSegmentIndex = segment.orderIndex;
     });
     // TODO: Implement audio playback for segment
     _playAudioSegment(segment);
   }
 
-  void _playAudioSegment(Segment segment) {
+  void _playAudioSegment(ShadowingSegment segment) {
     // TODO: Implement audio playback
-    print('Playing segment ${segment.index}: ${segment.text}');
+    print('Playing segment ${segment.orderIndex}: ${segment.text}');
   }
 
   void _togglePlayPause() {
@@ -51,7 +52,7 @@ class _ShadowingPlayerScreenState extends State<ShadowingPlayerScreen> {
     // TODO: Implement play/pause logic
   }
 
-  void _startRecording(Segment segment) {
+  void _startRecording(ShadowingSegment segment) {
     setState(() {
       _recordState = RecordState.recording;
       _currentRecordingSegment = segment;
@@ -70,12 +71,12 @@ class _ShadowingPlayerScreenState extends State<ShadowingPlayerScreen> {
     setState(() {
       _recordState = RecordState.processing;
     });
-    
+
     // TODO: Submit recording for analysis
     Future.delayed(const Duration(seconds: 2), () {
       // Mock result
       final result = SegmentResult(
-        segmentId: _currentRecordingSegment!.id,
+        segmentId: _currentRecordingSegment!.id.toString(),
         accuracyScore: 85.0,
         pronunciationScore: 78.0,
         fluencyScore: 82.0,
@@ -91,10 +92,10 @@ class _ShadowingPlayerScreenState extends State<ShadowingPlayerScreen> {
           ),
         ],
       );
-      
+
       setState(() {
         _recordState = RecordState.idle;
-        _segmentResults[_currentRecordingSegment!.id] = result;
+        _segmentResults[_currentRecordingSegment!.id.toString()] = result;
         _currentRecordingSegment = null;
       });
     });
@@ -122,8 +123,8 @@ class _ShadowingPlayerScreenState extends State<ShadowingPlayerScreen> {
   void _endSession() {
     final result = ShadowingResult(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
-      userId: 'user_1', // TODO: Get from auth
-      contentId: widget.content.id,
+      userId: '1', // TODO: Get from auth
+      contentId: widget.content.id.toString(),
       startedAt: DateTime.now().subtract(const Duration(minutes: 10)),
       completedAt: DateTime.now(),
       totalSegments: _segments.length,
@@ -165,18 +166,16 @@ class _ShadowingPlayerScreenState extends State<ShadowingPlayerScreen> {
         children: [
           // Header card
           _buildHeaderCard(),
-          
+
           // Player controls
           _buildPlayerControls(),
-          
+
           // Segments list
-          Expanded(
-            child: _buildSegmentsList(),
-          ),
-          
+          Expanded(child: _buildSegmentsList()),
+
           // Recording area or session summary
           if (_recordState != RecordState.idle) _buildRecordingArea(),
-          
+
           // Session footer
           _buildSessionFooter(),
         ],
@@ -215,7 +214,11 @@ class _ShadowingPlayerScreenState extends State<ShadowingPlayerScreen> {
                       : null,
                 ),
                 child: widget.content.thumbnail == null
-                    ? const Icon(Icons.audiotrack, color: Colors.white, size: 30)
+                    ? const Icon(
+                        Icons.audiotrack,
+                        color: Colors.white,
+                        size: 30,
+                      )
                     : null,
               ),
               const SizedBox(width: 12),
@@ -235,7 +238,7 @@ class _ShadowingPlayerScreenState extends State<ShadowingPlayerScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      widget.content.description,
+                      widget.content.description ?? '',
                       style: TextStyle(
                         fontSize: 14,
                         color: Colors.white.withOpacity(0.9),
@@ -339,9 +342,9 @@ class _ShadowingPlayerScreenState extends State<ShadowingPlayerScreen> {
               ),
             ],
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           // Speed and loop controls
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -368,7 +371,7 @@ class _ShadowingPlayerScreenState extends State<ShadowingPlayerScreen> {
                   ),
                 ],
               ),
-              
+
               // Loop toggle
               Row(
                 children: [
@@ -388,9 +391,9 @@ class _ShadowingPlayerScreenState extends State<ShadowingPlayerScreen> {
               ),
             ],
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           // Progress bar
           Column(
             children: [
@@ -405,13 +408,19 @@ class _ShadowingPlayerScreenState extends State<ShadowingPlayerScreen> {
               const Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('1:30', style: TextStyle(fontSize: 12, color: Colors.grey)),
-                  Text('5:00', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                  Text(
+                    '1:30',
+                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                  Text(
+                    '5:00',
+                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
                 ],
               ),
             ],
           ),
-          
+
           // Waveform (optional)
           const SizedBox(height: 8),
           const AudioWave(),
@@ -428,10 +437,7 @@ class _ShadowingPlayerScreenState extends State<ShadowingPlayerScreen> {
         children: [
           const Text(
             'Practice Segments',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
           Expanded(
@@ -439,17 +445,19 @@ class _ShadowingPlayerScreenState extends State<ShadowingPlayerScreen> {
               itemCount: _segments.length,
               itemBuilder: (context, index) {
                 final segment = _segments[index];
-                final result = _segmentResults[segment.id];
-                
+                final result = _segmentResults[segment.id.toString()];
+
                 return SegmentTile(
                   segment: segment,
                   isCurrent: _currentSegmentIndex == index,
                   result: result,
                   onPlaySegment: () => _playSegment(segment),
                   onRecord: () => _startRecording(segment),
-                  onViewResult: result != null ? () {
-                    _showSegmentResult(segment, result);
-                  } : null,
+                  onViewResult: result != null
+                      ? () {
+                          _showSegmentResult(segment, result);
+                        }
+                      : null,
                 );
               },
             ),
@@ -470,14 +478,11 @@ class _ShadowingPlayerScreenState extends State<ShadowingPlayerScreen> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            'Recording Segment ${_currentRecordingSegment!.index + 1}',
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
+            'Recording Segment ${_currentRecordingSegment!.orderIndex + 1}',
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
-          
+
           if (_recordState == RecordState.recording) ...[
             const Text(
               'Recording...',
@@ -486,7 +491,8 @@ class _ShadowingPlayerScreenState extends State<ShadowingPlayerScreen> {
             const SizedBox(height: 8),
             RecordButton(
               state: _recordState,
-              onStartRecording: _stopRecording, // Actually stops when pressed again
+              onStartRecording:
+                  _stopRecording, // Actually stops when pressed again
               onStopRecording: _stopRecording,
             ),
           ] else if (_recordState == RecordState.recorded) ...[
@@ -599,21 +605,26 @@ class _ShadowingPlayerScreenState extends State<ShadowingPlayerScreen> {
     );
   }
 
-  void _showSegmentResult(Segment segment, SegmentResult result) {
+  void _showSegmentResult(ShadowingSegment segment, SegmentResult result) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Segment ${segment.index + 1} Result'),
+        title: Text('Segment ${segment.orderIndex + 1} Result'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('Overall Score: ${result.overallScore.toStringAsFixed(1)}%'),
             Text('Accuracy: ${result.accuracyScore.toStringAsFixed(1)}%'),
-            Text('Pronunciation: ${result.pronunciationScore.toStringAsFixed(1)}%'),
+            Text(
+              'Pronunciation: ${result.pronunciationScore.toStringAsFixed(1)}%',
+            ),
             Text('Fluency: ${result.fluencyScore.toStringAsFixed(1)}%'),
             const SizedBox(height: 12),
-            const Text('Feedback:', style: TextStyle(fontWeight: FontWeight.bold)),
+            const Text(
+              'Feedback:',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
             Text(result.feedback),
           ],
         ),

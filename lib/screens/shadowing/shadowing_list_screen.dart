@@ -1,159 +1,67 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import '/data/models/shadowing_model.dart';
+import '/controllers/shadowing_controller.dart';
 import 'shadowing_player_screen.dart';
-//D:\DemoDACN\wordmaster_dacn\lib\screens\shadowing\shadowing_list_screen.dart
-class ShadowingListScreen extends StatefulWidget {
+
+class ShadowingListScreen extends StatelessWidget {
   const ShadowingListScreen({super.key});
 
   @override
-  State<ShadowingListScreen> createState() => _ShadowingListScreenState();
-}
-
-class _ShadowingListScreenState extends State<ShadowingListScreen> {
-  final List<ShadowingContent> _contents = [];
-  final TextEditingController _searchController = TextEditingController();
-  String _selectedDifficulty = 'all';
-  String _selectedAccent = 'all';
-
-  @override
-  void initState() {
-    super.initState();
-    _loadContents();
-  }
-
-  void _loadContents() {
-    
-    _contents.addAll([
-      ShadowingContent(
-        id: '1',
-        title: 'Daily Conversation - Basic',
-        description: 'Practice common daily conversations with clear pronunciation',
-        thumbnail: null, // Không dùng thumbnail thật
-        sourceUrl: 'https://example.com/audio1.mp3', // URL an toàn
-        sourceType: SourceType.audio,
-        transcript: 'Hello, how are you? I\'m doing great, thank you. What about you?',
-        duration: 180,
-        difficulty: Difficulty.beginner,
-        accentType: 'American',
-        speechRate: SpeechRate.slow,
-        tags: ['conversation', 'basic', 'daily'],
-        segments: _generateSegments(5),
-        createdAt: DateTime.now(),
-      ),
-      ShadowingContent(
-        id: '2',
-        title: 'Business Meeting',
-        description: 'Professional business meeting dialogues',
-        thumbnail: null,
-        sourceUrl: 'https://example.com/audio2.mp3',
-        sourceType: SourceType.audio,
-        transcript: 'Let\'s begin the meeting. First, I\'d like to discuss the quarterly results.',
-        duration: 300,
-        difficulty: Difficulty.intermediate,
-        accentType: 'British',
-        speechRate: SpeechRate.normal,
-        tags: ['business', 'meeting', 'professional'],
-        segments: _generateSegments(8),
-        createdAt: DateTime.now(),
-      ),
-      ShadowingContent(
-        id: '3',
-        title: 'TED Talk Excerpt',
-        description: 'Inspiring talk about innovation and technology',
-        thumbnail: null,
-        sourceUrl: 'https://youtube.com/watch?v=abc123',
-        sourceType: SourceType.youtube,
-        transcript: 'The future belongs to those who believe in the beauty of their dreams.',
-        duration: 420,
-        difficulty: Difficulty.advanced,
-        accentType: 'American',
-        speechRate: SpeechRate.fast,
-        tags: ['TED', 'inspiration', 'technology'],
-        segments: _generateSegments(12),
-        createdAt: DateTime.now(),
-      ),
-    ]);
-  }
-
-  List<Segment> _generateSegments(int count) {
-    final segments = [
-      'Hello, how are you doing today?',
-      'I\'m doing great, thank you for asking.',
-      'What have you been working on recently?',
-      'I\'ve been learning English with this app.',
-      'That sounds like a wonderful idea!',
-      'Practice makes perfect, as they say.',
-      'Would you like to practice together sometime?',
-      'That would be very helpful, thank you!',
-      'Let\'s meet tomorrow at the same time.',
-      'Looking forward to our practice session.',
-      'Remember to speak clearly and slowly.',
-      'Pronunciation is key to good communication.'
-    ];
-    
-    return List.generate(count, (index) => Segment(
-      id: 'seg_$index',
-      index: index,
-      text: segments[index % segments.length],
-      startTime: index * 5000,
-      endTime: (index + 1) * 5000,
-    ));
-  }
-
-  List<ShadowingContent> get _filteredContents {
-    return _contents.where((content) {
-      final matchesSearch = _searchController.text.isEmpty ||
-          content.title.toLowerCase().contains(_searchController.text.toLowerCase()) ||
-          content.description.toLowerCase().contains(_searchController.text.toLowerCase());
-      
-      final matchesDifficulty = _selectedDifficulty == 'all' ||
-          content.difficulty.toString().split('.').last == _selectedDifficulty;
-      
-      final matchesAccent = _selectedAccent == 'all' ||
-          content.accentType.toLowerCase() == _selectedAccent.toLowerCase();
-      
-      return matchesSearch && matchesDifficulty && matchesAccent;
-    }).toList();
-  }
-
-  @override
   Widget build(BuildContext context) {
+    // Initialize controller using GetX
+    final controller = Get.put(ShadowingController());
+    final searchController = TextEditingController();
+
     return Scaffold(
       appBar: AppBar(
         title: const Text(
           'Shadowing Practice',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
         ),
         backgroundColor: const Color(0xFF6366F1),
         actions: [
           IconButton(
             icon: const Icon(Icons.history, color: Colors.white),
-            onPressed: () {
-              _showPracticeHistory();
-            },
+            onPressed: () => _showPracticeHistory(context),
           ),
         ],
       ),
-      body: Column(
-        children: [
-          // Search and filters section
-          _buildSearchFilters(),
-          
-          // Content list
-          Expanded(
-            child: _filteredContents.isEmpty
-                ? _buildEmptyState()
-                : _buildContentList(),
-          ),
-        ],
+      body: RefreshIndicator(
+        onRefresh: controller.refresh,
+        child: Column(
+          children: [
+            // Search and filters section
+            _buildSearchFilters(controller, searchController),
+
+            // Content list with Obx for reactive updates
+            Expanded(
+              child: Obx(() {
+                if (controller.isLoading.value) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                if (controller.error.value.isNotEmpty) {
+                  return _buildErrorState(controller);
+                }
+
+                if (controller.shadowingList.isEmpty) {
+                  return _buildEmptyState();
+                }
+
+                return _buildContentList(controller);
+              }),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildSearchFilters() {
+  Widget _buildSearchFilters(
+    ShadowingController controller,
+    TextEditingController searchController,
+  ) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -170,41 +78,64 @@ class _ShadowingListScreenState extends State<ShadowingListScreen> {
         children: [
           // Search bar
           TextField(
-            controller: _searchController,
+            controller: searchController,
             decoration: InputDecoration(
               hintText: 'Tìm kiếm bài luyện...',
               prefixIcon: const Icon(Icons.search, color: Colors.grey),
+              suffixIcon: searchController.text.isNotEmpty
+                  ? IconButton(
+                      icon: const Icon(Icons.clear),
+                      onPressed: () {
+                        searchController.clear();
+                        controller.applyFilters(search: '');
+                      },
+                    )
+                  : null,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide.none,
               ),
               filled: true,
               fillColor: Colors.grey[50],
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 12,
+              ),
             ),
-            onChanged: (_) => setState(() {}),
+            onSubmitted: (value) => controller.applyFilters(search: value),
           ),
-          
+
           const SizedBox(height: 12),
-          
+
           // Filter row
           Row(
             children: [
               Expanded(
-                child: _buildFilterDropdown(
-                  value: _selectedDifficulty,
-                  items: _getDifficultyItems(),
-                  label: 'Mức độ',
-                  onChanged: (value) => setState(() => _selectedDifficulty = value!),
+                child: Obx(
+                  () => _buildFilterDropdown(
+                    value: controller.selectedDifficulty.value,
+                    items: const [
+                      'all',
+                      'Beginner',
+                      'Intermediate',
+                      'Advanced',
+                    ],
+                    label: 'Mức độ',
+                    onChanged: (value) =>
+                        controller.applyFilters(difficulty: value!),
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: _buildFilterDropdown(
-                  value: _selectedAccent,
-                  items: _getAccentItems(),
-                  label: 'Giọng',
-                  onChanged: (value) => setState(() => _selectedAccent = value!),
+                child: Obx(
+                  () => _buildFilterDropdown(
+                    value: controller.selectedAccent.value,
+                    items: const ['all', 'American', 'British'],
+                    label: 'Giọng',
+                    onChanged: (value) =>
+                        controller.applyFilters(accent: value!),
+                  ),
                 ),
               ),
             ],
@@ -216,55 +147,30 @@ class _ShadowingListScreenState extends State<ShadowingListScreen> {
 
   Widget _buildFilterDropdown({
     required String value,
-    required List<DropdownMenuItem<String>> items,
+    required List<String> items,
     required String label,
-    required Function(String?) onChanged,
+    required void Function(String?) onChanged,
   }) {
     return DropdownButtonFormField<String>(
       value: value,
-      items: items,
-      onChanged: onChanged,
       decoration: InputDecoration(
         labelText: label,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: Colors.grey),
-        ),
+        labelStyle: const TextStyle(fontSize: 12),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       ),
-      style: const TextStyle(fontSize: 14),
-    );
-  }
-
-  List<DropdownMenuItem<String>> _getDifficultyItems() {
-    return [
-      const DropdownMenuItem(value: 'all', child: Text('Tất cả mức độ')),
-      ...Difficulty.values.map((e) {
-        final difficulty = e.toString().split('.').last;
+      items: items.map((item) {
         return DropdownMenuItem(
-          value: difficulty,
-          child: Text(_getDifficultyText(difficulty)),
+          value: item,
+          child: Text(
+            item == 'all' ? 'Tất cả' : item,
+            style: const TextStyle(fontSize: 14),
+          ),
         );
       }).toList(),
-    ];
-  }
-
-  List<DropdownMenuItem<String>> _getAccentItems() {
-    return [
-      const DropdownMenuItem(value: 'all', child: Text('Tất cả giọng')),
-      const DropdownMenuItem(value: 'American', child: Text('American')),
-      const DropdownMenuItem(value: 'British', child: Text('British')),
-      const DropdownMenuItem(value: 'Australian', child: Text('Australian')),
-    ];
-  }
-
-  String _getDifficultyText(String difficulty) {
-    switch (difficulty) {
-      case 'beginner': return 'Cơ bản';
-      case 'intermediate': return 'Trung cấp';
-      case 'advanced': return 'Nâng cao';
-      default: return difficulty;
-    }
+      onChanged: onChanged,
+      isExpanded: true,
+    );
   }
 
   Widget _buildEmptyState() {
@@ -272,85 +178,99 @@ class _ShadowingListScreenState extends State<ShadowingListScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.record_voice_over,
-            size: 80,
-            color: Colors.grey[300],
-          ),
+          Icon(Icons.mic_none, size: 64, color: Colors.grey[400]),
           const SizedBox(height: 16),
-          const Text(
-            'Không tìm thấy bài luyện nào',
+          Text(
+            'Chưa có shadowing content nào',
             style: TextStyle(
-              fontSize: 18,
-              color: Colors.grey,
+              fontSize: 16,
+              color: Colors.grey[600],
               fontWeight: FontWeight.w500,
             ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Hãy thử thay đổi bộ lọc hoặc từ khóa tìm kiếm',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[400],
-            ),
-            textAlign: TextAlign.center,
           ),
         ],
       ),
     );
   }
 
-  Widget _buildContentList() {
+  Widget _buildErrorState(ShadowingController controller) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.error_outline, size: 64, color: Colors.red[400]),
+          const SizedBox(height: 16),
+          Text(
+            'Đã có lỗi xảy ra',
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.grey[600],
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32),
+            child: Text(
+              controller.error.value,
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+            ),
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton.icon(
+            onPressed: () => controller.refresh(),
+            icon: const Icon(Icons.refresh),
+            label: const Text('Thử lại'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildContentList(ShadowingController controller) {
     return ListView.builder(
       padding: const EdgeInsets.all(16),
-      itemCount: _filteredContents.length,
+      itemCount: controller.shadowingList.length,
       itemBuilder: (context, index) {
-        return _buildContentCard(_filteredContents[index]);
+        final content = controller.shadowingList[index];
+        return _buildContentCard(content, controller);
       },
     );
   }
 
-  Widget _buildContentCard(ShadowingContent content) {
+  Widget _buildContentCard(
+    ShadowingContent content,
+    ShadowingController controller,
+  ) {
     return Card(
+      elevation: 3,
       margin: const EdgeInsets.only(bottom: 16),
-      elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: InkWell(
+        onTap: () => _navigateToPlayer(content, controller),
         borderRadius: BorderRadius.circular(16),
-        onTap: () {
-          _navigateToPlayer(content);
-        },
         child: Padding(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header row với icon và thông tin
+              // Header
               Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Icon placeholder thay cho thumbnail
                   Container(
-                    width: 70,
-                    height: 70,
+                    padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(12),
+                      color: const Color(0xFF6366F1).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
                     ),
                     child: const Icon(
-                      Icons.record_voice_over,
-                      color: Colors.white,
-                      size: 32,
+                      Icons.mic,
+                      color: Color(0xFF6366F1),
+                      size: 24,
                     ),
                   ),
-                  
-                  const SizedBox(width: 16),
-                  
-                  // Content info
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -358,57 +278,70 @@ class _ShadowingListScreenState extends State<ShadowingListScreen> {
                         Text(
                           content.title,
                           style: const TextStyle(
-                            fontSize: 18,
+                            fontSize: 16,
                             fontWeight: FontWeight.bold,
                             color: Color(0xFF1E293B),
                           ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        const SizedBox(height: 6),
-                        Text(
-                          content.description,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[600],
-                            height: 1.4,
+                        if (content.description != null &&
+                            content.description!.isNotEmpty)
+                          Text(
+                            content.description!,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
                       ],
                     ),
                   ),
                 ],
               ),
-              
+
               const SizedBox(height: 16),
-              
+
               // Tags và metadata
               Wrap(
                 spacing: 8,
                 runSpacing: 6,
                 children: [
                   _buildInfoChip(
-                    _getDifficultyText(content.difficulty.toString().split('.').last),
+                    content.difficulty,
                     _getDifficultyColor(content.difficulty),
                   ),
                   _buildInfoChip(content.accentType, Colors.blue),
-                  _buildInfoChip('${content.duration ~/ 60} phút', Colors.green),
-                  _buildInfoChip('${content.segments.length} câu', Colors.orange),
-                  ...content.tags.take(2).map((tag) => _buildInfoChip(tag, Colors.purple)),
+                  if (content.duration != null)
+                    _buildInfoChip(
+                      '${content.duration! ~/ 60} phút',
+                      Colors.green,
+                    ),
+                  if (content.segmentCount != null)
+                    _buildInfoChip(
+                      '${content.segmentCount} câu',
+                      Colors.orange,
+                    ),
+                  ...content.tagList
+                      .take(2)
+                      .map((tag) => _buildInfoChip(tag, Colors.purple)),
                 ],
               ),
-              
+
               const SizedBox(height: 16),
-              
-              // Footer với action button
+
+              // Footer
               Row(
                 children: [
-                  // View count (placeholder)
                   Row(
                     children: [
-                      Icon(Icons.visibility_outlined, size: 16, color: Colors.grey[500]),
+                      Icon(
+                        Icons.visibility_outlined,
+                        size: 16,
+                        color: Colors.grey[500],
+                      ),
                       const SizedBox(width: 4),
                       Text(
                         '${content.viewCount}',
@@ -416,12 +349,11 @@ class _ShadowingListScreenState extends State<ShadowingListScreen> {
                       ),
                     ],
                   ),
-                  
+
                   const Spacer(),
-                  
-                  // Start practice button
+
                   ElevatedButton.icon(
-                    onPressed: () => _navigateToPlayer(content),
+                    onPressed: () => _navigateToPlayer(content, controller),
                     icon: const Icon(Icons.play_arrow, size: 18),
                     label: const Text(
                       'Bắt đầu luyện tập',
@@ -430,9 +362,12 @@ class _ShadowingListScreenState extends State<ShadowingListScreen> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF10B981),
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 10,
+                      ),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(8),
                       ),
                     ),
                   ),
@@ -447,11 +382,11 @@ class _ShadowingListScreenState extends State<ShadowingListScreen> {
 
   Widget _buildInfoChip(String text, Color color) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.2)),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: color.withOpacity(0.3)),
       ),
       child: Text(
         text,
@@ -464,37 +399,42 @@ class _ShadowingListScreenState extends State<ShadowingListScreen> {
     );
   }
 
-  Color _getDifficultyColor(Difficulty difficulty) {
-    switch (difficulty) {
-      case Difficulty.beginner:
-        return const Color(0xFF10B981); // Green
-      case Difficulty.intermediate:
-        return const Color(0xFFF59E0B); // Orange
-      case Difficulty.advanced:
-        return const Color(0xFFEF4444); // Red
+  Color _getDifficultyColor(String difficulty) {
+    switch (difficulty.toLowerCase()) {
+      case 'beginner':
+        return const Color(0xFF10B981);
+      case 'intermediate':
+        return const Color(0xFFF59E0B);
+      case 'advanced':
+        return const Color(0xFFEF4444);
+      default:
+        return Colors.grey;
     }
   }
 
-  void _navigateToPlayer(ShadowingContent content) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ShadowingPlayerScreen(content: content),
-      ),
-    );
+  void _navigateToPlayer(
+    ShadowingContent content,
+    ShadowingController controller,
+  ) async {
+    try {
+      // Load full content detail with segments using GetX
+      final detailContent = await controller.getContentDetail(content.id);
+
+      if (detailContent != null) {
+        Get.to(() => ShadowingPlayerScreen(content: detailContent));
+      }
+    } catch (e) {
+      // Error already handled in controller
+    }
   }
 
-  void _showPracticeHistory() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
+  void _showPracticeHistory(BuildContext context) {
+    Get.dialog(
+      AlertDialog(
         title: const Text('Lịch sử luyện tập'),
         content: const Text('Tính năng đang được phát triển...'),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Đóng'),
-          ),
+          TextButton(onPressed: () => Get.back(), child: const Text('Đóng')),
         ],
       ),
     );
