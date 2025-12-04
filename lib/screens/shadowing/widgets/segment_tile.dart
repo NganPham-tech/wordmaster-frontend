@@ -3,7 +3,7 @@ import '/data/models/shadowing_model.dart';
 import 'compare_score_chip.dart';
 
 class SegmentTile extends StatelessWidget {
-  final Segment segment;
+  final ShadowingSegment segment;
   final bool isCurrent;
   final SegmentResult? result;
   final VoidCallback onPlaySegment;
@@ -38,12 +38,14 @@ class SegmentTile extends StatelessWidget {
                   width: 32,
                   height: 32,
                   decoration: BoxDecoration(
-                    color: isCurrent ? const Color(0xFF6366F1) : Colors.grey[300],
+                    color: isCurrent
+                        ? const Color(0xFF6366F1)
+                        : Colors.grey[300],
                     shape: BoxShape.circle,
                   ),
                   child: Center(
                     child: Text(
-                      '${segment.index + 1}',
+                      '${segment.orderIndex + 1}',
                       style: TextStyle(
                         color: isCurrent ? Colors.white : Colors.grey[700],
                         fontWeight: FontWeight.bold,
@@ -52,31 +54,33 @@ class SegmentTile extends StatelessWidget {
                     ),
                   ),
                 ),
-                
+
                 const SizedBox(width: 12),
-                
+
                 // Segment text
                 Expanded(
                   child: Text(
                     segment.text,
                     style: TextStyle(
                       fontSize: 14,
-                      fontWeight: isCurrent ? FontWeight.w500 : FontWeight.normal,
+                      fontWeight: isCurrent
+                          ? FontWeight.w500
+                          : FontWeight.normal,
                       color: isCurrent ? const Color(0xFF6366F1) : Colors.black,
                     ),
                   ),
                 ),
-                
+
                 const SizedBox(width: 8),
-                
+
                 // Score chip if practiced
                 if (result != null)
                   CompareScoreChip(score: result!.overallScore),
               ],
             ),
-            
+
             const SizedBox(height: 8),
-            
+
             // Action buttons
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
