@@ -42,7 +42,7 @@ class _SegmentAudioPlayerState extends State<SegmentAudioPlayer> {
     
     // Check if segment changed
     if (oldWidget.segment.id != widget.segment.id) {
-      print('🎵 Segment changed from ${oldWidget.segment.orderIndex} to ${widget.segment.orderIndex}');
+      print('Segment changed from ${oldWidget.segment.orderIndex} to ${widget.segment.orderIndex}');
       _updateSegment();
     }
   }
@@ -56,7 +56,7 @@ class _SegmentAudioPlayerState extends State<SegmentAudioPlayer> {
     _segmentEnd = Duration(milliseconds: (widget.segment.endTime * 1000).toInt());
     _segmentDuration = _segmentEnd - _segmentStart;
 
-    print('🎵 Updated to Segment ${widget.segment.orderIndex}: ${_segmentStart.inSeconds}s - ${_segmentEnd.inSeconds}s');
+    print('Updated to Segment ${widget.segment.orderIndex}: ${_segmentStart.inSeconds}s - ${_segmentEnd.inSeconds}s');
 
     // Reset state completely
     setState(() {
@@ -71,7 +71,7 @@ class _SegmentAudioPlayerState extends State<SegmentAudioPlayer> {
     _segmentEnd = Duration(milliseconds: (widget.segment.endTime * 1000).toInt());
     _segmentDuration = _segmentEnd - _segmentStart;
 
-    print('🎵 Segment ${widget.segment.orderIndex}: ${_segmentStart.inSeconds}s - ${_segmentEnd.inSeconds}s');
+    print('Segment ${widget.segment.orderIndex}: ${_segmentStart.inSeconds}s - ${_segmentEnd.inSeconds}s');
 
     // Listen to position changes
     _audioPlayer.onPositionChanged.listen((position) {
@@ -87,7 +87,7 @@ class _SegmentAudioPlayerState extends State<SegmentAudioPlayer> {
 
       // Auto-stop when reaching segment end (with small buffer for precision)
       if (position >= _segmentEnd - const Duration(milliseconds: 100) && _isPlaying) {
-        print('🎵 Segment completed at position: ${position.inSeconds}s');
+        print('Segment completed at position: ${position.inSeconds}s');
         _stopPlayback();
         widget.onSegmentComplete?.call();
       }
@@ -95,15 +95,17 @@ class _SegmentAudioPlayerState extends State<SegmentAudioPlayer> {
 
     // Listen to player state
     _audioPlayer.onPlayerStateChanged.listen((state) {
-      setState(() {
-        _isPlaying = state == PlayerState.playing;
-      });
-      print('🎵 Player state: $state');
+      if (mounted) {
+        setState(() {
+          _isPlaying = state == PlayerState.playing;
+        });
+      }
+      print('Player state: $state');
     });
 
     // Listen to duration
     _audioPlayer.onDurationChanged.listen((duration) {
-      print('🎵 Total audio duration: ${duration.inSeconds}s');
+      print('Total audio duration: ${duration.inSeconds}s');
     });
   }
 
@@ -112,16 +114,20 @@ class _SegmentAudioPlayerState extends State<SegmentAudioPlayer> {
     
     try {
       setState(() => _isLoading = true);
-      print('🎵 Loading audio: ${widget.audioUrl}');
+      print('Loading audio: ${widget.audioUrl}');
       
       await _audioPlayer.setSourceUrl(widget.audioUrl);
       _isAudioLoaded = true;
       
-      print('🎵 Audio loaded successfully');
-      setState(() => _isLoading = false);
+      print('Audio loaded successfully');
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     } catch (e) {
-      print('🎵 Audio load error: $e');
-      setState(() => _isLoading = false);
+      print('Audio load error: $e');
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -136,7 +142,7 @@ class _SegmentAudioPlayerState extends State<SegmentAudioPlayer> {
           await Future.delayed(const Duration(milliseconds: 500));
         }
         
-        print('🎵 Seeking to: ${_segmentStart.inSeconds}s');
+        print('Seeking to: ${_segmentStart.inSeconds}s');
         await _audioPlayer.seek(_segmentStart);
         
         // Use play with UrlSource instead of resume to ensure proper playback
@@ -144,7 +150,7 @@ class _SegmentAudioPlayerState extends State<SegmentAudioPlayer> {
         await _audioPlayer.seek(_segmentStart); // Seek again after play to ensure correct position
       }
     } catch (e) {
-      print('🎵 Playback error: $e');
+      print('Playback error: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Lỗi phát audio: $e'),
@@ -176,6 +182,8 @@ class _SegmentAudioPlayerState extends State<SegmentAudioPlayer> {
 
   @override
   void dispose() {
+    // Stop any ongoing playback and dispose player
+    _audioPlayer.stop();
     _audioPlayer.dispose();
     super.dispose();
   }

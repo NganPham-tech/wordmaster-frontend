@@ -75,10 +75,10 @@ class _DictationSegmentScreenState extends State<DictationSegmentScreen>
   }
 
   String _getAudioUrl() {
-    // Nếu có audioPath, tạo URL đầy đủ
-    if (widget.content.audioPath != null && widget.content.audioPath!.isNotEmpty) {
-      final baseUrl = 'http://10.0.2.2:3000/uploads/dictation';
-      return '$baseUrl/${widget.content.audioPath}';
+    // Use the fixed audioURL getter that handles duplicate paths correctly
+    if (widget.content.audioURL != null) {
+      print('Using fixed audioURL: ${widget.content.audioURL}');
+      return widget.content.audioURL!;
     }
     
     // Fallback: Sử dụng sourceURL (YouTube)
@@ -163,7 +163,7 @@ class _DictationSegmentScreenState extends State<DictationSegmentScreen>
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: const Text('Hoàn Thành! 🎉'),
+        title: const Text('Hoàn Thành!'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -227,7 +227,7 @@ class _DictationSegmentScreenState extends State<DictationSegmentScreen>
     final isChecked = _segmentChecked[_currentSegmentIndex];
     final feedback = _segmentFeedback[_currentSegmentIndex];
 
-    // 🔥 CHECK AUDIO URL
+    // CHECK AUDIO URL
     if (widget.content.audioURL == null) {
       return Scaffold(
         appBar: AppBar(

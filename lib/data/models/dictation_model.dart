@@ -93,15 +93,43 @@ class DictationContent {
   
   // ✅ FIXED: Get full audio URL from backend
   String? get audioURL {
-    // Backend sends full URL in 'audioURL' field
-    if (audioPath != null && audioPath!.isNotEmpty) {
-      // audioPath is just filename like "audio-xxx.mp3"
-      // Build full URL for Android Emulator
-      return 'http://10.0.2.2:3000/uploads/dictation/$audioPath';
+    if (audioPath == null || audioPath!.isEmpty) {
+      print('🔊 audioURL: audioPath is null or empty');
+      return null;
     }
     
-    // No audio available
-    return null;
+    print('🔊 Original audioPath: "$audioPath"');
+    String cleanPath = audioPath!;
+    
+    // If already a full URL, return as-is
+    if (cleanPath.startsWith('http')) {
+      print('🔊 audioURL: Already full HTTP URL');
+      return cleanPath;
+    }
+    
+    // Clean up duplicate /uploads/dictation/ prefixes
+    if (cleanPath.startsWith('/uploads/dictation/')) {
+      // Remove the first /uploads/dictation/ prefix
+      cleanPath = cleanPath.substring('/uploads/dictation/'.length);
+      print('🔊 After removing first /uploads/dictation/: "$cleanPath"');
+    }
+    
+    // Remove any additional /uploads/dictation/ that might be embedded
+    while (cleanPath.startsWith('uploads/dictation/')) {
+      cleanPath = cleanPath.substring('uploads/dictation/'.length);
+      print('🔊 After removing embedded uploads/dictation/: "$cleanPath"');
+    }
+    
+    // Ensure cleanPath doesn't start with / to avoid double slash
+    if (cleanPath.startsWith('/')) {
+      cleanPath = cleanPath.substring(1);
+      print('🔊 After removing leading slash: "$cleanPath"');
+    }
+    
+    // Now build the final URL
+    final finalURL = 'http://10.0.2.2:3000/uploads/dictation/$cleanPath';
+    print('🔊 Final audioURL: "$finalURL"');
+    return finalURL;
   }
 
   String get durationFormatted {
