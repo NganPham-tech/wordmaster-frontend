@@ -1,4 +1,5 @@
 // File: lib/data/models/dictation_model.dart
+import '../../config/env_config.dart';
 
 class DictationContent {
   final String id;
@@ -127,7 +128,7 @@ class DictationContent {
     }
     
     // Now build the final URL
-    final finalURL = 'http://10.0.2.2:3000/uploads/dictation/$cleanPath';
+    final finalURL = '${EnvConfig.baseUrl.replaceAll('/api', '')}/uploads/dictation/$cleanPath';
     print('🔊 Final audioURL: "$finalURL"');
     return finalURL;
   }

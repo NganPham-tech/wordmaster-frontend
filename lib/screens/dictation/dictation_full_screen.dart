@@ -92,11 +92,11 @@ class _DictationFullScreenState extends State<DictationFullScreen>
       _inputController.text
     );
     
-    // 🆕 CALCULATE SCORE based on accuracy
+   
     final accuracy = result['accuracy'] as int;
     final scoreEarned = _calculateScore(accuracy);
     
-    // 🆕 COMPLETE SESSION
+    
     await sessionController.completeSession();
     
     setState(() {
@@ -106,7 +106,7 @@ class _DictationFullScreenState extends State<DictationFullScreen>
     _showResultDialog(result, timeSpent, scoreEarned);
   }
 
-  // 🆕 CALCULATE SCORE
+ 
   double _calculateScore(int accuracy) {
     // Base score: 100 points
     // Accuracy multiplier
@@ -170,7 +170,7 @@ class _DictationFullScreenState extends State<DictationFullScreen>
       context: context,
       barrierDismissible: false,
       builder: (context) => ResultDialog(
-        title: 'Hoàn Thành Bài Nghe! 🎉',
+        title: 'Hoàn Thành Bài Nghe!',
         accuracy: result['accuracy'].toDouble(),
         correctAnswers: result['correctWords'],
         totalQuestions: result['totalWords'],

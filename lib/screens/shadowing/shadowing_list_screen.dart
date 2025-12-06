@@ -3,14 +3,14 @@ import 'package:get/get.dart';
 import '/data/models/shadowing_model.dart';
 import '/controllers/shadowing_controller.dart';
 import 'shadowing_player_screen.dart';
-
+//D:\DemoDACN\wordmaster_dacn\lib\screens\shadowing\shadowing_list_screen.dart
 class ShadowingListScreen extends StatelessWidget {
   const ShadowingListScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     // Initialize controller using GetX
-    final controller = Get.put(ShadowingController());
+    final controller = Get.put(ShadowingController(), permanent: true);
     final searchController = TextEditingController();
 
     return Scaffold(

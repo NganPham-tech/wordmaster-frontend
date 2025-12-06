@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import '/data/models/shadowing_model.dart';
-import 'dart:async';
-import 'widgets/segment_tile.dart';
-import 'widgets/record_button.dart';
+import '/controllers/shadowing_controller.dart';
+import 'shadowing_segment_practice_screen.dart';
 import 'widgets/audio_wave.dart';
-import 'shadowing_result_screen.dart';
-
-//D:\DemoDACN\wordmaster_dacn\lib\screens\shadowing\shadowing_player_screen.dart
+// D:\DemoDACN\wordmaster_dacn\lib\screens\shadowing\shadowing_player_screen.dart
 class ShadowingPlayerScreen extends StatefulWidget {
   final ShadowingContentDetail content;
 
@@ -17,130 +15,7 @@ class ShadowingPlayerScreen extends StatefulWidget {
 }
 
 class _ShadowingPlayerScreenState extends State<ShadowingPlayerScreen> {
-  final List<ShadowingSegment> _segments = [];
-  int _currentSegmentIndex = 0;
-  bool _isPlaying = false;
-  double _playbackSpeed = 1.0;
-  bool _isLooping = false;
-  RecordState _recordState = RecordState.idle;
-  ShadowingSegment? _currentRecordingSegment;
-  final Map<String, SegmentResult> _segmentResults = {};
-
-  @override
-  void initState() {
-    super.initState();
-    _segments.addAll(widget.content.segments);
-  }
-
-  void _playSegment(ShadowingSegment segment) {
-    setState(() {
-      _currentSegmentIndex = segment.orderIndex;
-    });
-    // TODO: Implement audio playback for segment
-    _playAudioSegment(segment);
-  }
-
-  void _playAudioSegment(ShadowingSegment segment) {
-    // TODO: Implement audio playback
-    print('Playing segment ${segment.orderIndex}: ${segment.text}');
-  }
-
-  void _togglePlayPause() {
-    setState(() {
-      _isPlaying = !_isPlaying;
-    });
-    // TODO: Implement play/pause logic
-  }
-
-  void _startRecording(ShadowingSegment segment) {
-    setState(() {
-      _recordState = RecordState.recording;
-      _currentRecordingSegment = segment;
-    });
-    // TODO: Start audio recording
-  }
-
-  void _stopRecording() {
-    setState(() {
-      _recordState = RecordState.recorded;
-    });
-    // TODO: Stop audio recording and save file
-  }
-
-  void _submitRecording() {
-    setState(() {
-      _recordState = RecordState.processing;
-    });
-
-    // TODO: Submit recording for analysis
-    Future.delayed(const Duration(seconds: 2), () {
-      // Mock result
-      final result = SegmentResult(
-        segmentId: _currentRecordingSegment!.id.toString(),
-        accuracyScore: 85.0,
-        pronunciationScore: 78.0,
-        fluencyScore: 82.0,
-        overallScore: 82.0,
-        recognizedText: _currentRecordingSegment!.text,
-        feedback: 'Good pronunciation! Focus on vowel sounds in "practice".',
-        pronunciationHints: [
-          PronunciationHint(
-            word: 'practice',
-            expectedPronunciation: '/ˈpræk.tɪs/',
-            userPronunciation: '/ˈpræk.təs/',
-            suggestion: 'Focus on the "ɪ" sound in the second syllable',
-          ),
-        ],
-      );
-
-      setState(() {
-        _recordState = RecordState.idle;
-        _segmentResults[_currentRecordingSegment!.id.toString()] = result;
-        _currentRecordingSegment = null;
-      });
-    });
-  }
-
-  void _retryRecording() {
-    setState(() {
-      _recordState = RecordState.idle;
-      _currentRecordingSegment = null;
-    });
-  }
-
-  int get _practicedSegmentsCount {
-    return _segmentResults.length;
-  }
-
-  double get _averageScore {
-    if (_segmentResults.isEmpty) return 0.0;
-    final total = _segmentResults.values
-        .map((result) => result.overallScore)
-        .reduce((a, b) => a + b);
-    return total / _segmentResults.length;
-  }
-
-  void _endSession() {
-    final result = ShadowingResult(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      userId: '1', // TODO: Get from auth
-      contentId: widget.content.id.toString(),
-      startedAt: DateTime.now().subtract(const Duration(minutes: 10)),
-      completedAt: DateTime.now(),
-      totalSegments: _segments.length,
-      practicedSegments: _practicedSegmentsCount,
-      averageScore: _averageScore,
-      totalTimeSpent: 600, // 10 minutes
-      segmentResults: _segmentResults.values.toList(),
-    );
-
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ShadowingResultScreen(result: result),
-      ),
-    );
-  }
+  final ShadowingController controller = Get.find<ShadowingController>();
 
   @override
   Widget build(BuildContext context) {
@@ -149,505 +24,571 @@ class _ShadowingPlayerScreenState extends State<ShadowingPlayerScreen> {
         title: Text(widget.content.title),
         actions: [
           IconButton(
-            icon: const Icon(Icons.history),
-            onPressed: () {
-              // TODO: Show practice history
-            },
-          ),
-          IconButton(
             icon: const Icon(Icons.info_outline),
-            onPressed: () {
-              _showInstructions();
-            },
+            onPressed: _showInfo,
           ),
         ],
       ),
-      body: Column(
-        children: [
-          // Header card
-          _buildHeaderCard(),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Content header
+              _buildContentHeader(),
+              
+              const SizedBox(height: 24),
 
-          // Player controls
-          _buildPlayerControls(),
+              // Practice mode cards
+              _buildPracticeModeCard(
+                title: 'Segment Practice',
+                subtitle: 'Practice one segment at a time',
+                icon: Icons.view_list,
+                color: const Color(0xFF6366F1),
+                onTap: () {
+                  Get.to(() => ShadowingSegmentPracticeScreen(
+                        content: widget.content,
+                      ));
+                },
+              ),
 
-          // Segments list
-          Expanded(child: _buildSegmentsList()),
+              const SizedBox(height: 16),
 
-          // Recording area or session summary
-          if (_recordState != RecordState.idle) _buildRecordingArea(),
+              _buildPracticeModeCard(
+                title: 'Full Audio Practice',
+                subtitle: 'Record the entire content',
+                icon: Icons.mic,
+                color: const Color(0xFF10B981),
+                onTap: _showFullPractice,
+              ),
 
-          // Session footer
-          _buildSessionFooter(),
-        ],
+              const SizedBox(height: 24),
+
+              // Content details
+              _buildContentDetails(),
+
+              const SizedBox(height: 24),
+
+              // Segments preview
+              _buildSegmentsPreview(),
+            ],
+          ),
+        ),
       ),
     );
   }
 
-  Widget _buildHeaderCard() {
-    return Container(
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+  Widget _buildContentHeader() {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    color: Colors.white.withOpacity(0.2),
+                    image: widget.content.thumbnail != null
+                        ? DecorationImage(
+                            image: NetworkImage(widget.content.thumbnail!),
+                            fit: BoxFit.cover,
+                          )
+                        : null,
+                  ),
+                  child: widget.content.thumbnail == null
+                      ? const Icon(
+                          Icons.audiotrack,
+                          color: Colors.white,
+                          size: 40,
+                        )
+                      : null,
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.content.title,
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      if (widget.content.description != null) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          widget.content.description!,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.white.withOpacity(0.9),
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            
+            const SizedBox(height: 16),
+            
+            // Quick stats
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildStatItem(
+                  Icons.access_time,
+                  widget.content.duration != null
+                      ? '${(widget.content.duration! / 60).toStringAsFixed(0)} min'
+                      : 'N/A',
+                ),
+                _buildStatItem(
+                  Icons.format_list_numbered,
+                  '${widget.content.segments.length} segments',
+                ),
+                _buildStatItem(
+                  Icons.signal_cellular_alt,
+                  widget.content.difficulty,
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatItem(IconData icon, String text) {
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: Colors.white.withOpacity(0.9)),
+        const SizedBox(width: 4),
+        Text(
+          text,
+          style: TextStyle(
+            fontSize: 12,
+            color: Colors.white.withOpacity(0.9),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPracticeModeCard({
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return Card(
+      elevation: 3,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Row(
             children: [
               Container(
                 width: 60,
                 height: 60,
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(8),
-                  color: Colors.white.withOpacity(0.2),
-                  image: widget.content.thumbnail != null
-                      ? DecorationImage(
-                          image: NetworkImage(widget.content.thumbnail!),
-                          fit: BoxFit.cover,
-                        )
-                      : null,
+                  color: color.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                child: widget.content.thumbnail == null
-                    ? const Icon(
-                        Icons.audiotrack,
-                        color: Colors.white,
-                        size: 30,
-                      )
-                    : null,
+                child: Icon(
+                  icon,
+                  color: color,
+                  size: 30,
+                ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      widget.content.title,
+                      title,
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
                       ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      widget.content.description ?? '',
+                      subtitle,
                       style: TextStyle(
                         fontSize: 14,
-                        color: Colors.white.withOpacity(0.9),
+                        color: Colors.grey[600],
                       ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              ElevatedButton.icon(
-                onPressed: _togglePlayPause,
-                icon: Icon(_isPlaying ? Icons.pause : Icons.play_arrow),
-                label: const Text('Play Full'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: const Color(0xFF6366F1),
-                ),
-              ),
-              const SizedBox(width: 8),
-              OutlinedButton.icon(
-                onPressed: () {
-                  // Scroll to segments
-                },
-                icon: const Icon(Icons.list),
-                label: const Text('Practice Segments'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.white,
-                  side: const BorderSide(color: Colors.white),
-                ),
+              Icon(
+                Icons.arrow_forward_ios,
+                color: Colors.grey[400],
+                size: 20,
               ),
             ],
           ),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _buildPlayerControls() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          // Main play button
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              IconButton(
-                icon: const Icon(Icons.replay_10, size: 28),
-                onPressed: () {
-                  // TODO: Rewind 10 seconds
-                },
-              ),
-              const SizedBox(width: 16),
-              Container(
-                width: 64,
-                height: 64,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF10B981),
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF10B981).withOpacity(0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: IconButton(
-                  icon: Icon(
-                    _isPlaying ? Icons.pause : Icons.play_arrow,
-                    color: Colors.white,
-                    size: 32,
-                  ),
-                  onPressed: _togglePlayPause,
-                ),
-              ),
-              const SizedBox(width: 16),
-              IconButton(
-                icon: const Icon(Icons.forward_10, size: 28),
-                onPressed: () {
-                  // TODO: Forward 10 seconds
-                },
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 16),
-
-          // Speed and loop controls
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              // Speed selector
-              Row(
-                children: [
-                  const Icon(Icons.speed, size: 20, color: Colors.grey),
-                  const SizedBox(width: 8),
-                  DropdownButton<double>(
-                    value: _playbackSpeed,
-                    items: [0.75, 1.0, 1.25, 1.5].map((speed) {
-                      return DropdownMenuItem(
-                        value: speed,
-                        child: Text('${speed}x'),
-                      );
-                    }).toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        _playbackSpeed = value!;
-                      });
-                      // TODO: Update playback speed
-                    },
-                  ),
-                ],
-              ),
-
-              // Loop toggle
-              Row(
-                children: [
-                  const Icon(Icons.loop, size: 20, color: Colors.grey),
-                  const SizedBox(width: 8),
-                  Switch(
-                    value: _isLooping,
-                    onChanged: (value) {
-                      setState(() {
-                        _isLooping = value;
-                      });
-                      // TODO: Toggle segment looping
-                    },
-                    activeColor: const Color(0xFF10B981),
-                  ),
-                ],
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 16),
-
-          // Progress bar
-          Column(
-            children: [
-              Slider(
-                value: 0.3, // TODO: Connect to actual progress
-                onChanged: (value) {
-                  // TODO: Implement seeking
-                },
-                activeColor: const Color(0xFF6366F1),
-              ),
-              const SizedBox(height: 8),
-              const Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    '1:30',
-                    style: TextStyle(fontSize: 12, color: Colors.grey),
-                  ),
-                  Text(
-                    '5:00',
-                    style: TextStyle(fontSize: 12, color: Colors.grey),
-                  ),
-                ],
-              ),
-            ],
-          ),
-
-          // Waveform (optional)
-          const SizedBox(height: 8),
-          const AudioWave(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSegmentsList() {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Practice Segments',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 12),
-          Expanded(
-            child: ListView.builder(
-              itemCount: _segments.length,
-              itemBuilder: (context, index) {
-                final segment = _segments[index];
-                final result = _segmentResults[segment.id.toString()];
-
-                return SegmentTile(
-                  segment: segment,
-                  isCurrent: _currentSegmentIndex == index,
-                  result: result,
-                  onPlaySegment: () => _playSegment(segment),
-                  onRecord: () => _startRecording(segment),
-                  onViewResult: result != null
-                      ? () {
-                          _showSegmentResult(segment, result);
-                        }
-                      : null,
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildRecordingArea() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.grey[50],
-        border: const Border(top: BorderSide(color: Colors.grey)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            'Recording Segment ${_currentRecordingSegment!.orderIndex + 1}',
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 12),
-
-          if (_recordState == RecordState.recording) ...[
+  Widget _buildContentDetails() {
+    return Card(
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
             const Text(
-              'Recording...',
-              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+              'Content Details',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-            const SizedBox(height: 8),
-            RecordButton(
-              state: _recordState,
-              onStartRecording:
-                  _stopRecording, // Actually stops when pressed again
-              onStopRecording: _stopRecording,
-            ),
-          ] else if (_recordState == RecordState.recorded) ...[
-            const Text('Recording complete!'),
+            const SizedBox(height: 16),
+            _buildDetailRow('Difficulty', widget.content.difficulty),
             const SizedBox(height: 12),
+            _buildDetailRow('Accent', widget.content.accentType),
+            const SizedBox(height: 12),
+            _buildDetailRow('Speech Rate', widget.content.speechRate),
+            const SizedBox(height: 12),
+            _buildDetailRow(
+              'Word Count',
+              widget.content.wordCount?.toString() ?? 'N/A',
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(String label, String value) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 14,
+            color: Colors.grey[600],
+          ),
+        ),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSegmentsPreview() {
+    return Card(
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
             Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                ElevatedButton.icon(
-                  onPressed: _submitRecording,
-                  icon: const Icon(Icons.send),
-                  label: const Text('Submit for Analysis'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF10B981),
+                const Text(
+                  'Segments Preview',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(width: 12),
-                OutlinedButton.icon(
-                  onPressed: _retryRecording,
-                  icon: const Icon(Icons.replay),
-                  label: const Text('Retry'),
+                Text(
+                  '${widget.content.segments.length} total',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[600],
+                  ),
                 ),
               ],
             ),
-          ] else if (_recordState == RecordState.processing) ...[
-            const CircularProgressIndicator(),
-            const SizedBox(height: 8),
-            const Text('Analyzing your recording...'),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSessionFooter() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: const Border(top: BorderSide(color: Colors.grey)),
-      ),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Segments practiced: $_practicedSegmentsCount/${_segments.length}',
-                style: const TextStyle(fontWeight: FontWeight.w500),
-              ),
-              Text(
-                'Avg score: ${_averageScore.toStringAsFixed(1)}%',
-                style: TextStyle(
-                  color: _getScoreColor(_averageScore),
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: _endSession,
-                  child: const Text('End Session'),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: () {
-                    // TODO: Save session progress
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF6366F1),
+            const SizedBox(height: 16),
+            ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: widget.content.segments.take(5).length,
+              separatorBuilder: (context, index) => const Divider(),
+              itemBuilder: (context, index) {
+                final segment = widget.content.segments[index];
+                return ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: CircleAvatar(
+                    backgroundColor: const Color(0xFF6366F1).withOpacity(0.1),
+                    child: Text(
+                      '${index + 1}',
+                      style: const TextStyle(
+                        color: Color(0xFF6366F1),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
-                  child: const Text('Save Progress'),
+                  title: Text(
+                    segment.text,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  subtitle: Text(
+                    '${segment.duration.toStringAsFixed(1)}s',
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                );
+              },
+            ),
+            if (widget.content.segments.length > 5) ...[
+              const SizedBox(height: 12),
+              Center(
+                child: Text(
+                  '+ ${widget.content.segments.length - 5} more segments',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[600],
+                  ),
                 ),
               ),
             ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showInstructions() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Shadowing Instructions'),
-        content: const Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('1. Listen to the segment carefully'),
-            Text('2. Record yourself repeating the segment'),
-            Text('3. Get instant feedback on your pronunciation'),
-            Text('4. Practice difficult segments multiple times'),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Got it'),
-          ),
-        ],
       ),
     );
   }
 
-  void _showSegmentResult(ShadowingSegment segment, SegmentResult result) {
+  void _showFullPractice() {
+    Get.dialog(
+      Dialog(
+        child: Container(
+          width: double.maxFinite,
+          height: MediaQuery.of(context).size.height * 0.8,
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              // Header
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Full Transcript',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  IconButton(
+                    onPressed: () => Get.back(),
+                    icon: const Icon(Icons.close),
+                  ),
+                ],
+              ),
+              
+              const Divider(),
+              
+              // Audio controls
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.grey[100],
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        IconButton(
+                          onPressed: () {
+                            // TODO: Implement play/pause full audio
+                            controller.playFullAudio(widget.content.audioURL!);
+                          },
+                          icon: const Icon(Icons.play_arrow, size: 32),
+                        ),
+                        IconButton(
+                          onPressed: () {
+                            // TODO: Implement stop
+                            controller.stopAudio();
+                          },
+                          icon: const Icon(Icons.stop, size: 32),
+                        ),
+                      ],
+                    ),
+                    const Text(
+                      'Play full audio to follow along',
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                  ],
+                ),
+              ),
+              
+              const SizedBox(height: 16),
+              
+              // Full transcript
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey[300]!),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Full Transcript:',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        
+                        // Show full transcript or segments
+                        if (widget.content.transcript.isNotEmpty)
+                          Text(
+                            widget.content.transcript,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              height: 1.6,
+                              color: Colors.black87,
+                            ),
+                          )
+                        else
+                          // If no full transcript, show segments combined
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: widget.content.segments.map((segment) {
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 8),
+                                child: Text(
+                                  segment.text,
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    height: 1.6,
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              
+              const SizedBox(height: 16),
+              
+              // Practice button
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Get.back();
+                    // TODO: Start full practice mode with recording
+                    _startFullPracticeMode();
+                  },
+                  icon: const Icon(Icons.mic),
+                  label: const Text('Start Practice Recording'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF10B981),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.all(16),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+  
+  void _startFullPracticeMode() {
+    // TODO: Implement full practice recording mode
+    Get.snackbar(
+      'Practice Mode',
+      'Full practice recording will be implemented soon',
+      backgroundColor: Colors.orange,
+      colorText: Colors.white,
+    );
+  }
+
+  void _showInfo() {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Segment ${segment.orderIndex + 1} Result'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Overall Score: ${result.overallScore.toStringAsFixed(1)}%'),
-            Text('Accuracy: ${result.accuracyScore.toStringAsFixed(1)}%'),
-            Text(
-              'Pronunciation: ${result.pronunciationScore.toStringAsFixed(1)}%',
-            ),
-            Text('Fluency: ${result.fluencyScore.toStringAsFixed(1)}%'),
-            const SizedBox(height: 12),
-            const Text(
-              'Feedback:',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            Text(result.feedback),
-          ],
+        title: const Text('About This Content'),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Title: ${widget.content.title}'),
+              const SizedBox(height: 8),
+              if (widget.content.description != null)
+                Text('Description: ${widget.content.description}'),
+              const SizedBox(height: 8),
+              Text('Difficulty: ${widget.content.difficulty}'),
+              const SizedBox(height: 8),
+              Text('Accent: ${widget.content.accentType}'),
+              const SizedBox(height: 8),
+              Text('Segments: ${widget.content.segments.length}'),
+              const SizedBox(height: 16),
+              const Divider(),
+              const SizedBox(height: 8),
+              const Text(
+                'Full Transcript:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Text(widget.content.transcript),
+            ],
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Close'),
           ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _startRecording(segment);
-            },
-            child: const Text('Practice Again'),
-          ),
         ],
       ),
     );
-  }
-
-  Color _getScoreColor(double score) {
-    if (score >= 85) return Colors.green;
-    if (score >= 70) return Colors.orange;
-    return Colors.red;
   }
 }

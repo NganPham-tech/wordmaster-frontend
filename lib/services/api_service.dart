@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import '../config/env_config.dart'; 
 import '../data/models/deck_model.dart';
 import '../data/models/flashcard_model.dart';
 import '../data/models/grammar_card_model.dart';
@@ -16,9 +17,13 @@ class ApiService extends GetConnect {
 
   @override
   void onInit() {
-    httpClient.baseUrl = 'http://10.0.2.2:3000/api';
-    httpClient.timeout = const Duration(seconds: 10);
+  
+    httpClient.baseUrl = EnvConfig.baseUrl;
+    httpClient.timeout = EnvConfig.defaultTimeout;
     httpClient.defaultContentType = 'application/json';
+
+
+    EnvConfig.printConfig();
 
     httpClient.addRequestModifier<dynamic>((request) {
       // Add authorization header if user is logged in
@@ -30,65 +35,59 @@ class ApiService extends GetConnect {
         }
       }
 
-      print('REQUEST: ${request.method} ${request.url}');
+      print(' REQUEST: ${request.method} ${request.url}');
       return request;
     });
 
     httpClient.addResponseModifier((request, response) {
-      print('RESPONSE: ${response.statusCode} ${request.url}');
+      print(' RESPONSE: ${response.statusCode} ${request.url}');
+      if (response.hasError) {
+        print(' ERROR: ${response.body}');
+      }
       return response;
     });
 
     super.onInit();
   }
 
-  // ==================== VOCABULARY DECKS ====================
+
 
   Future<List<Deck>> getVocabularyDecks() async {
     try {
       final response = await get('/decks/vocabulary');
-
-      if (response.hasError) {
-        throw _handleError(response);
-      }
-
+      if (response.hasError) throw _handleError(response);
       final List<dynamic> data = response.body;
       return data.map((json) => Deck.fromJson(json)).toList();
     } catch (e) {
+      print(' getVocabularyDecks error: $e');
       rethrow;
     }
   }
 
-  // ==================== GRAMMAR DECKS ====================
+
 
   Future<List<Deck>> getGrammarDecks() async {
     try {
       final response = await get('/decks/grammar');
-
-      if (response.hasError) {
-        throw _handleError(response);
-      }
-
+      if (response.hasError) throw _handleError(response);
       final List<dynamic> data = response.body;
       return data.map((json) => Deck.fromJson(json)).toList();
     } catch (e) {
+      print(' getGrammarDecks error: $e');
       rethrow;
     }
   }
 
-  // ==================== ALL DECKS ====================
+
 
   Future<List<Deck>> getDecks() async {
     try {
       final response = await get('/decks');
-
-      if (response.hasError) {
-        throw _handleError(response);
-      }
-
+      if (response.hasError) throw _handleError(response);
       final List<dynamic> data = response.body;
       return data.map((json) => Deck.fromJson(json)).toList();
     } catch (e) {
+      print(' getDecks error: $e');
       rethrow;
     }
   }
@@ -96,30 +95,24 @@ class ApiService extends GetConnect {
   Future<Deck> getDeckById(int id) async {
     try {
       final response = await get('/decks/$id');
-
-      if (response.hasError) {
-        throw _handleError(response);
-      }
-
+      if (response.hasError) throw _handleError(response);
       return Deck.fromJson(response.body);
     } catch (e) {
+      print(' getDeckById error: $e');
       rethrow;
     }
   }
 
-  // ==================== FLASHCARDS ====================
+
 
   Future<List<Flashcard>> getFlashcardsByDeck(int deckId) async {
     try {
       final response = await get('/flashcards/deck/$deckId');
-
-      if (response.hasError) {
-        throw _handleError(response);
-      }
-
+      if (response.hasError) throw _handleError(response);
       final List<dynamic> data = response.body;
       return data.map((json) => Flashcard.fromJson(json)).toList();
     } catch (e) {
+      print('getFlashcardsByDeck error: $e');
       rethrow;
     }
   }
@@ -127,30 +120,24 @@ class ApiService extends GetConnect {
   Future<Flashcard> getFlashcardById(int id) async {
     try {
       final response = await get('/flashcards/$id');
-
-      if (response.hasError) {
-        throw _handleError(response);
-      }
-
+      if (response.hasError) throw _handleError(response);
       return Flashcard.fromJson(response.body);
     } catch (e) {
+      print(' getFlashcardById error: $e');
       rethrow;
     }
   }
 
-  // ==================== GRAMMAR CARDS ====================
+
 
   Future<List<GrammarCard>> getGrammarCardsByDeck(int deckId) async {
     try {
       final response = await get('/grammar/deck/$deckId');
-
-      if (response.hasError) {
-        throw _handleError(response);
-      }
-
+      if (response.hasError) throw _handleError(response);
       final List<dynamic> data = response.body;
       return data.map((json) => GrammarCard.fromJson(json)).toList();
     } catch (e) {
+      print(' getGrammarCardsByDeck error: $e');
       rethrow;
     }
   }
@@ -158,18 +145,15 @@ class ApiService extends GetConnect {
   Future<GrammarCard> getGrammarCardById(int id) async {
     try {
       final response = await get('/grammar/$id');
-
-      if (response.hasError) {
-        throw _handleError(response);
-      }
-
+      if (response.hasError) throw _handleError(response);
       return GrammarCard.fromJson(response.body);
     } catch (e) {
+      print(' getGrammarCardById error: $e');
       rethrow;
     }
   }
 
-  // ==================== DICTATION ====================
+
 
   Future<List<dynamic>> getDictationContent(
     Map<String, String> queryParams,
@@ -177,18 +161,14 @@ class ApiService extends GetConnect {
     try {
       String queryString = '';
       if (queryParams.isNotEmpty) {
-        queryString =
-            '?' +
+        queryString = '?' +
             queryParams.entries
                 .map((e) => '${e.key}=${Uri.encodeComponent(e.value)}')
                 .join('&');
       }
 
       final response = await get('/dictation$queryString');
-
-      if (response.hasError) {
-        throw _handleError(response);
-      }
+      if (response.hasError) throw _handleError(response);
 
       final responseData = response.body;
       if (responseData['success'] == true) {
@@ -196,6 +176,7 @@ class ApiService extends GetConnect {
       }
       return [];
     } catch (e) {
+      print(' getDictationContent error: $e');
       rethrow;
     }
   }
@@ -203,10 +184,7 @@ class ApiService extends GetConnect {
   Future<Map<String, dynamic>?> getDictationById(int id) async {
     try {
       final response = await get('/dictation/$id');
-
-      if (response.hasError) {
-        throw _handleError(response);
-      }
+      if (response.hasError) throw _handleError(response);
 
       final responseData = response.body;
       if (responseData['success'] == true) {
@@ -214,6 +192,7 @@ class ApiService extends GetConnect {
       }
       return null;
     } catch (e) {
+      print(' getDictationById error: $e');
       rethrow;
     }
   }
@@ -230,12 +209,10 @@ class ApiService extends GetConnect {
         'difficulty': difficulty,
       });
 
-      if (response.hasError) {
-        throw _handleError(response);
-      }
-
+      if (response.hasError) throw _handleError(response);
       return response.body;
     } catch (e) {
+      print(' addYouTubeVideo error: $e');
       rethrow;
     }
   }
@@ -253,17 +230,15 @@ class ApiService extends GetConnect {
         'timeSpent': timeSpent,
       });
 
-      if (response.hasError) {
-        throw _handleError(response);
-      }
-
+      if (response.hasError) throw _handleError(response);
       return response.body;
     } catch (e) {
+      print(' submitDictationResult error: $e');
       rethrow;
     }
   }
 
-  // ==================== SHADOWING ====================
+ 
 
   Future<Map<String, dynamic>> getShadowingContents({
     String? search,
@@ -290,10 +265,7 @@ class ApiService extends GetConnect {
         query['speechRate'] = speechRate;
 
       final response = await get('/shadowing', query: query);
-
-      if (response.hasError) {
-        throw _handleError(response);
-      }
+      if (response.hasError) throw _handleError(response);
 
       final data = response.body;
       if (data['success'] != true) {
@@ -307,6 +279,7 @@ class ApiService extends GetConnect {
         'pagination': data['pagination'],
       };
     } catch (e) {
+      print(' getShadowingContents error: $e');
       rethrow;
     }
   }
@@ -314,10 +287,7 @@ class ApiService extends GetConnect {
   Future<ShadowingContentDetail> getShadowingContentById(int id) async {
     try {
       final response = await get('/shadowing/$id');
-
-      if (response.hasError) {
-        throw _handleError(response);
-      }
+      if (response.hasError) throw _handleError(response);
 
       final data = response.body;
       if (data['success'] != true) {
@@ -326,13 +296,72 @@ class ApiService extends GetConnect {
 
       return ShadowingContentDetail.fromJson(data['data']);
     } catch (e) {
+      print(' getShadowingContentById error: $e');
       rethrow;
     }
   }
 
-  // ==================== ERROR HANDLING ====================
+
+  Future<Map<String, dynamic>> getSTTInfo() async {
+    try {
+      final response = await get('/shadowing/stt-info');
+      if (response.hasError) throw _handleError(response);
+
+      final data = response.body;
+      if (data['success'] != true) {
+        throw data['error'] ?? 'Failed to fetch STT info';
+      }
+
+      return data['data'];
+    } catch (e) {
+      print(' getSTTInfo error: $e');
+      rethrow;
+    }
+  }
+
+
+  Future<Map<String, dynamic>> submitSegmentRecording({
+    required int contentId,
+    required int segmentId,
+    required String audioFilePath,
+    required int userId,
+  }) async {
+    try {
+      print(' Uploading audio: $audioFilePath');
+      
+      final form = FormData({
+        'userId': userId.toString(),
+        'segmentId': segmentId.toString(),
+        'audio': MultipartFile(audioFilePath, filename: 'recording.m4a'),
+      });
+
+  
+      final response = await post(
+        '/shadowing/$contentId/submit-segment',
+        form,
+      ).timeout(EnvConfig.uploadTimeout);
+
+      if (response.hasError) throw _handleError(response);
+
+      final data = response.body;
+      if (data['success'] != true) {
+        throw data['error'] ?? 'Failed to submit recording';
+      }
+
+      print(' Recording submitted successfully');
+      return data['data'];
+    } catch (e) {
+      print(' submitSegmentRecording error: $e');
+      rethrow;
+    }
+  }
+
+
 
   String _handleError(Response response) {
+    print(' API Error: ${response.statusCode}');
+    print('   Body: ${response.body}');
+
     switch (response.statusCode) {
       case 400:
         return response.body['message'] ?? 'Yêu cầu không hợp lệ';

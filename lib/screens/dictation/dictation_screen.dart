@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '/data/models/dictation_model.dart';
 import '../../controllers/dictation_controller.dart';
+import '../../services/auth_service.dart';
 import 'dictation_mode_screen.dart';
 class DictationScreen extends StatelessWidget {
   const DictationScreen({super.key});
@@ -538,9 +539,11 @@ class DictationScreen extends StatelessWidget {
                   Obx(() => ElevatedButton(
                     onPressed: controller.isLoading.value ? null : () async {
                       if (linkController.text.trim().isNotEmpty) {
-                        // Mock user ID - replace with real user ID from auth
+                        // Get real user ID from auth service with fallback
+                        final userId = AuthService.instance.userId;
+                        final safeUserId = userId > 0 ? userId : 2;
                         final success = await controller.addYouTubeVideo(
-                          userId: 1, // TODO: Get real user ID
+                          userId: safeUserId,
                           sourceURL: linkController.text.trim(),
                           difficulty: selectedLevel,
                         );

@@ -1,249 +1,247 @@
+// lib/data/models/shadowing_model.dart
+// Updated with STT provider information
+import '../../config/env_config.dart';
+
+class SegmentResult {
+  final String segmentId;
+  final double accuracyScore;
+  final double pronunciationScore;
+  final double fluencyScore;
+  final double overallScore;
+  final String recognizedText;
+  final String feedback;
+  final List<PronunciationHint> pronunciationHints;
+  final double? confidence;
+  final String? provider; 
+  final bool? isMock;
+
+  SegmentResult({
+    required this.segmentId,
+    required this.accuracyScore,
+    required this.pronunciationScore,
+    required this.fluencyScore,
+    required this.overallScore,
+    required this.recognizedText,
+    required this.feedback,
+    this.pronunciationHints = const [],
+    this.confidence,
+    this.provider,
+    this.isMock,
+  });
+
+  factory SegmentResult.fromJson(Map<String, dynamic> json) {
+    return SegmentResult(
+      segmentId: json['segmentId'].toString(),
+      accuracyScore: (json['accuracyScore'] ?? 0).toDouble(),
+      pronunciationScore: (json['pronunciationScore'] ?? 0).toDouble(),
+      fluencyScore: (json['fluencyScore'] ?? 0).toDouble(),
+      overallScore: (json['overallScore'] ?? 0).toDouble(),
+      recognizedText: json['recognizedText'] ?? '',
+      feedback: json['feedback'] ?? '',
+      pronunciationHints: (json['pronunciationHints'] as List?)
+          ?.map((h) => PronunciationHint.fromJson(h))
+          .toList() ?? [],
+      confidence: json['confidence']?.toDouble(),
+      provider: json['provider'],
+      isMock: json['isMock'],
+    );
+  }
+}
+
+class PronunciationHint {
+  final String word;
+  final String expectedPronunciation;
+  final String userPronunciation;
+  final String suggestion;
+  final int? similarity;
+
+  PronunciationHint({
+    required this.word,
+    required this.expectedPronunciation,
+    required this.userPronunciation,
+    required this.suggestion,
+    this.similarity,
+  });
+
+  factory PronunciationHint.fromJson(Map<String, dynamic> json) {
+    return PronunciationHint(
+      word: json['word'] ?? '',
+      expectedPronunciation: json['expectedPronunciation'] ?? '',
+      userPronunciation: json['userPronunciation'] ?? '',
+      suggestion: json['suggestion'] ?? '',
+      similarity: json['similarity'],
+    );
+  }
+}
+
 class ShadowingContent {
   final int id;
   final String title;
   final String? description;
-  final String? thumbnail;
-  final String sourceURL;
   final String sourceType;
+  final String sourceURL;
+  final String? thumbnail;
   final String? audioPath;
-  final String transcript;
-  final int? duration; // seconds
   final String difficulty;
   final String accentType;
   final String speechRate;
+  final int? duration;
   final String? tags;
   final int viewCount;
-  final int wordCount;
-  final bool isActive;
+  final int? wordCount;
+  final int? segmentCount;
   final DateTime createdAt;
-  final int? segmentCount; // From _count in API
 
   ShadowingContent({
     required this.id,
     required this.title,
     this.description,
-    this.thumbnail,
-    required this.sourceURL,
     required this.sourceType,
+    required this.sourceURL,
+    this.thumbnail,
     this.audioPath,
-    required this.transcript,
-    this.duration,
     required this.difficulty,
     required this.accentType,
     required this.speechRate,
+    this.duration,
     this.tags,
-    this.viewCount = 0,
-    this.wordCount = 0,
-    this.isActive = true,
-    required this.createdAt,
+    required this.viewCount,
+    this.wordCount,
     this.segmentCount,
+    required this.createdAt,
   });
+
+  List<String> get tagList {
+    if (tags == null || tags!.isEmpty) return [];
+    return tags!.split(',').map((t) => t.trim()).toList();
+  }
+
+  String? get audioURL {
+    if (audioPath == null || audioPath!.isEmpty) {
+      return null;
+    }
+    
+    String cleanPath = audioPath!;
+    
+    // If already a full URL, return as-is
+    if (cleanPath.startsWith('http')) {
+      return cleanPath;
+    }
+    
+    // Clean up duplicate /uploads/shadowing/ prefixes
+    if (cleanPath.startsWith('/uploads/shadowing/')) {
+      // Remove the first /uploads/shadowing/ prefix
+      cleanPath = cleanPath.substring('/uploads/shadowing/'.length);
+    }
+    
+    // Remove any additional /uploads/shadowing/ that might be embedded
+    while (cleanPath.startsWith('uploads/shadowing/')) {
+      cleanPath = cleanPath.substring('uploads/shadowing/'.length);
+    }
+    
+    // Now build the final URL
+    return '${EnvConfig.baseUrl.replaceAll('/api', '')}/uploads/shadowing/$cleanPath';
+  }
 
   factory ShadowingContent.fromJson(Map<String, dynamic> json) {
     return ShadowingContent(
-      id: json['id'] is int ? json['id'] : int.parse(json['id'].toString()),
-      title: json['title'] ?? '',
+      id: json['id'],
+      title: json['title'],
       description: json['description'],
+      sourceType: json['sourceType'],
+      sourceURL: json['sourceURL'],
       thumbnail: json['thumbnail'],
-      sourceURL: json['sourceURL'] ?? '',
-      sourceType: json['sourceType'] ?? 'Audio',
       audioPath: json['audioPath'],
-      transcript: json['transcript'] ?? '',
-      duration: json['duration'],
-      difficulty: json['difficulty'] ?? 'Intermediate',
+      difficulty: json['difficulty'],
       accentType: json['accentType'] ?? 'American',
       speechRate: json['speechRate'] ?? 'Normal',
+      duration: json['duration'],
       tags: json['tags'],
       viewCount: json['viewCount'] ?? 0,
-      wordCount: json['wordCount'] ?? 0,
-      isActive: json['isActive'] ?? true,
-      createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'])
-          : DateTime.now(),
+      wordCount: json['wordCount'],
       segmentCount: json['_count']?['segments'],
-    );
-  }
-
-  // Get audio URL
-  String? get audioURL {
-    if (audioPath != null && audioPath!.isNotEmpty) {
-      return 'http://10.0.2.2:3000/uploads/shadowing/$audioPath';
-    }
-    return null;
-  }
-
-  // Duration formatted as MM:SS
-  String get durationFormatted {
-    if (duration == null) return '--:--';
-    final minutes = duration! ~/ 60;
-    final seconds = duration! % 60;
-    return '$minutes:${seconds.toString().padLeft(2, '0')}';
-  }
-
-  // Parse tags to list
-  List<String> get tagList {
-    if (tags == null || tags!.isEmpty) return [];
-    return tags!
-        .split(',')
-        .map((t) => t.trim())
-        .where((t) => t.isNotEmpty)
-        .toList();
-  }
-}
-
-class ShadowingSegment {
-  final int id;
-  final int contentId;
-  final int orderIndex;
-  final double startTime;
-  final double endTime;
-  final String text;
-  final DateTime createdAt;
-
-  ShadowingSegment({
-    required this.id,
-    required this.contentId,
-    required this.orderIndex,
-    required this.startTime,
-    required this.endTime,
-    required this.text,
-    required this.createdAt,
-  });
-
-  factory ShadowingSegment.fromJson(Map<String, dynamic> json) {
-    return ShadowingSegment(
-      id: json['id'],
-      contentId: json['contentId'],
-      orderIndex: json['orderIndex'],
-      startTime: (json['startTime'] as num).toDouble(),
-      endTime: (json['endTime'] as num).toDouble(),
-      text: json['text'],
       createdAt: DateTime.parse(json['createdAt']),
     );
   }
-
-  double get duration => endTime - startTime;
-
-  String get durationFormatted {
-    return '${duration.toStringAsFixed(1)}s';
-  }
 }
 
-class ShadowingContentDetail {
-  final int id;
-  final String title;
-  final String? description;
-  final String? thumbnail;
-  final String sourceURL;
-  final String sourceType;
-  final String? audioPath;
+class ShadowingContentDetail extends ShadowingContent {
   final String transcript;
-  final int? duration;
-  final String difficulty;
-  final String accentType;
-  final String speechRate;
-  final String? tags;
-  final int viewCount;
-  final int wordCount;
-  final bool isActive;
-  final DateTime createdAt;
   final List<ShadowingSegment> segments;
 
   ShadowingContentDetail({
-    required this.id,
-    required this.title,
-    this.description,
-    this.thumbnail,
-    required this.sourceURL,
-    required this.sourceType,
-    this.audioPath,
+    required super.id,
+    required super.title,
+    super.description,
+    required super.sourceType,
+    required super.sourceURL,
+    super.thumbnail,
+    super.audioPath,
+    required super.difficulty,
+    required super.accentType,
+    required super.speechRate,
+    super.duration,
+    super.tags,
+    required super.viewCount,
+    super.wordCount,
+    super.segmentCount,
+    required super.createdAt,
     required this.transcript,
-    this.duration,
-    required this.difficulty,
-    required this.accentType,
-    required this.speechRate,
-    this.tags,
-    this.viewCount = 0,
-    this.wordCount = 0,
-    this.isActive = true,
-    required this.createdAt,
     required this.segments,
   });
 
   factory ShadowingContentDetail.fromJson(Map<String, dynamic> json) {
     return ShadowingContentDetail(
       id: json['id'],
-      title: json['title'] ?? '',
+      title: json['title'],
       description: json['description'],
+      sourceType: json['sourceType'],
+      sourceURL: json['sourceURL'],
       thumbnail: json['thumbnail'],
-      sourceURL: json['sourceURL'] ?? '',
-      sourceType: json['sourceType'] ?? 'Audio',
       audioPath: json['audioPath'],
-      transcript: json['transcript'] ?? '',
-      duration: json['duration'],
-      difficulty: json['difficulty'] ?? 'Intermediate',
+      difficulty: json['difficulty'],
       accentType: json['accentType'] ?? 'American',
       speechRate: json['speechRate'] ?? 'Normal',
+      duration: json['duration'],
       tags: json['tags'],
       viewCount: json['viewCount'] ?? 0,
-      wordCount: json['wordCount'] ?? 0,
-      isActive: json['isActive'] ?? true,
+      wordCount: json['wordCount'],
+      segmentCount: (json['segments'] as List?)?.length,
       createdAt: DateTime.parse(json['createdAt']),
-      segments: (json['segments'] as List)
-          .map((s) => ShadowingSegment.fromJson(s))
-          .toList(),
+      transcript: json['transcript'],
+      segments: (json['segments'] as List?)
+          ?.map((s) => ShadowingSegment.fromJson(s))
+          .toList() ?? [],
     );
-  }
-
-  String? get audioURL {
-    if (audioPath != null && audioPath!.isNotEmpty) {
-      return 'http://10.0.2.2:3000/uploads/shadowing/$audioPath';
-    }
-    return null;
-  }
-
-  String get durationFormatted {
-    if (duration == null) return '--:--';
-    final minutes = duration! ~/ 60;
-    final seconds = duration! % 60;
-    return '$minutes:${seconds.toString().padLeft(2, '0')}';
-  }
-
-  List<String> get tagList {
-    if (tags == null || tags!.isEmpty) return [];
-    return tags!
-        .split(',')
-        .map((t) => t.trim())
-        .where((t) => t.isNotEmpty)
-        .toList();
   }
 }
 
-class Segment {
-  final String id;
-  final int index;
+class ShadowingSegment {
+  final int id;
+  final int orderIndex;
+  final double startTime;
+  final double endTime;
   final String text;
-  final int startTime; // milliseconds
-  final int endTime; // milliseconds
-  final double? userScore;
-  final String? userAudioPath;
-  final String? recognizedText;
-  final DateTime? practicedAt;
 
-  Segment({
+  ShadowingSegment({
     required this.id,
-    required this.index,
-    required this.text,
+    required this.orderIndex,
     required this.startTime,
     required this.endTime,
-    this.userScore,
-    this.userAudioPath,
-    this.recognizedText,
-    this.practicedAt,
+    required this.text,
   });
 
-  bool get isPracticed => userScore != null;
-  int get duration => endTime - startTime;
+  double get duration => endTime - startTime;
+
+  factory ShadowingSegment.fromJson(Map<String, dynamic> json) {
+    return ShadowingSegment(
+      id: json['id'],
+      orderIndex: json['orderIndex'],
+      startTime: (json['startTime'] ?? 0).toDouble(),
+      endTime: (json['endTime'] ?? 0).toDouble(),
+      text: json['text'],
+    );
+  }
 }
 
 class ShadowingResult {
@@ -255,7 +253,7 @@ class ShadowingResult {
   final int totalSegments;
   final int practicedSegments;
   final double averageScore;
-  final int totalTimeSpent; // seconds
+  final int totalTimeSpent;
   final List<SegmentResult> segmentResults;
 
   ShadowingResult({
@@ -270,48 +268,70 @@ class ShadowingResult {
     required this.totalTimeSpent,
     required this.segmentResults,
   });
+
+  factory ShadowingResult.fromJson(Map<String, dynamic> json) {
+    return ShadowingResult(
+      id: json['id'].toString(),
+      userId: json['userId'].toString(),
+      contentId: json['contentId'].toString(),
+      startedAt: DateTime.parse(json['startedAt']),
+      completedAt: DateTime.parse(json['completedAt']),
+      totalSegments: json['totalSegments'],
+      practicedSegments: json['practicedSegments'],
+      averageScore: (json['averageScore'] ?? 0).toDouble(),
+      totalTimeSpent: json['totalTimeSpent'],
+      segmentResults: (json['segmentResults'] as List?)
+          ?.map((r) => SegmentResult.fromJson(r))
+          .toList() ?? [],
+    );
+  }
 }
 
-class SegmentResult {
-  final String segmentId;
-  final double accuracyScore;
-  final double pronunciationScore;
-  final double fluencyScore;
-  final double overallScore;
-  final String recognizedText;
-  final String feedback;
-  final List<PronunciationHint> pronunciationHints;
+enum RecordState {
+  idle,
+  recording,
+  recorded,
+  processing,
+}
 
-  SegmentResult({
-    required this.segmentId,
-    required this.accuracyScore,
-    required this.pronunciationScore,
-    required this.fluencyScore,
-    required this.overallScore,
-    required this.recognizedText,
-    required this.feedback,
-    required this.pronunciationHints,
+// STT Provider Info
+class STTProviderInfo {
+  final String name;
+  final String mode;
+  final double? totalMinutes;
+  final double? monthlyLimit;
+  final double? percentUsed;
+  final bool isMock;
+
+  STTProviderInfo({
+    required this.name,
+    required this.mode,
+    this.totalMinutes,
+    this.monthlyLimit,
+    this.percentUsed,
+    required this.isMock,
   });
+
+  factory STTProviderInfo.fromJson(Map<String, dynamic> json) {
+    final provider = json['provider'] ?? {};
+    final usage = json['usage'] ?? {};
+    
+    return STTProviderInfo(
+      name: provider['name'] ?? 'Unknown',
+      mode: json['mode'] ?? 'auto',
+      totalMinutes: usage['totalMinutes']?.toDouble(),
+      monthlyLimit: usage['monthlyLimit']?.toDouble(),
+      percentUsed: usage['percentUsed'] != null 
+          ? double.parse(usage['percentUsed'].toString())
+          : null,
+      isMock: provider['name']?.contains('Mock') ?? false,
+    );
+  }
+  
+  String get usageText {
+    if (totalMinutes == null || monthlyLimit == null) {
+      return 'Mock Mode - Unlimited';
+    }
+    return '${totalMinutes!.toStringAsFixed(1)}/${monthlyLimit!.toInt()} min (${percentUsed!.toStringAsFixed(1)}%)';
+  }
 }
-
-class PronunciationHint {
-  final String word;
-  final String expectedPronunciation;
-  final String userPronunciation;
-  final String suggestion;
-
-  PronunciationHint({
-    required this.word,
-    required this.expectedPronunciation,
-    required this.userPronunciation,
-    required this.suggestion,
-  });
-}
-
-enum SourceType { youtube, audio, video }
-
-enum Difficulty { beginner, intermediate, advanced }
-
-enum SpeechRate { slow, normal, fast }
-
-enum RecordState { idle, recording, recorded, processing }

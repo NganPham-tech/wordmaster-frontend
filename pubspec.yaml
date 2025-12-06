@@ -44,7 +44,12 @@ dependencies:
   
   # Audio player
   audioplayers: ^6.1.0
-  
+  just_audio: ^0.10.5
+
+
+  record: ^6.1.2
+  speech_to_text: ^7.3.0
+  audio_waveforms: ^2.0.1
   # Charts
   fl_chart: ^0.69.2
   shimmer: ^3.0.0

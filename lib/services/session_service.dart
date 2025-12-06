@@ -3,9 +3,10 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:get_storage/get_storage.dart';
 import '../data/models/study_session_model.dart';
+import '../config/env_config.dart';
 
 class SessionService {
-  static const String baseUrl = 'http://10.0.2.2:3000/api';
+  static String get baseUrl => EnvConfig.baseUrl;
   final _storage = GetStorage();
   
   // Get auth token
