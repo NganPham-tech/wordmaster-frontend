@@ -8,6 +8,25 @@
 ##  Tổng quan
 
 WordMaster là ứng dụng di động học tiếng Anh toàn diện được phát triển bằng Flutter, cung cấp trải nghiệm học tập cá nhân hóa với các tính năng tiên tiến như học từ vựng, luyện nghe, shadowing, dictation và quiz tương tác.
+## Screenshots
+Register screen
+<img width="383" height="838" alt="image" src="https://github.com/user-attachments/assets/c82d6a19-31ce-45d8-a73a-077d3eb04426" />
+Login screen
+<img width="406" height="877" alt="image" src="https://github.com/user-attachments/assets/b97795e6-6016-476c-8cd5-5d1205feee92" />
+Index screen
+<img width="398" height="866" alt="image" src="https://github.com/user-attachments/assets/5f6bfde3-c1e0-456e-92d2-9a52949393e9" />
+Profile screen
+<img width="404" height="869" alt="image" src="https://github.com/user-attachments/assets/50727e17-3551-42a9-9825-b8c749fef9d3" />
+Flashcard screen
+<img width="268" height="600" alt="image" src="https://github.com/user-attachments/assets/169f5b78-f711-4f0a-b902-82b2c9303ffc" />
+Shadowing screen
+<img width="376" height="857" alt="image" src="https://github.com/user-attachments/assets/73c15a01-3f3d-4664-93c0-1505fa916f0a" />
+Dictation screen
+<img width="266" height="600" alt="image" src="https://github.com/user-attachments/assets/6c051498-2e9f-4e48-bb1c-fce45f2a6787" />
+
+
+
+
 
 ##  Tính năng chính
 
