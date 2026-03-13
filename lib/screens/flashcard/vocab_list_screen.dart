@@ -14,6 +14,7 @@ class VocabListScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(
         title: const Text(
           'Bộ từ vựng',

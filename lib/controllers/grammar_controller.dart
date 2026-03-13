@@ -5,7 +5,7 @@ import '../services/api_service.dart';
 class GrammarController extends GetxController {
   final ApiService _apiService = ApiService.instance;
 
-  // Observables
+  
   final RxList<GrammarCard> grammarCards = <GrammarCard>[].obs;
   final RxBool isLoading = false.obs;
   final RxString error = ''.obs;
@@ -13,7 +13,7 @@ class GrammarController extends GetxController {
   final RxInt understoodCount = 0.obs;
   final RxInt notUnderstoodCount = 0.obs;
 
-  // Current card
+
   GrammarCard? get currentCard {
     if (grammarCards.isEmpty || currentIndex.value >= grammarCards.length) {
       return null;
@@ -21,13 +21,13 @@ class GrammarController extends GetxController {
     return grammarCards[currentIndex.value];
   }
 
-  // Progress
+
   double get progress {
     if (grammarCards.isEmpty) return 0;
     return (currentIndex.value + 1) / grammarCards.length;
   }
 
-  // Fetch grammar cards by deck
+
   Future<void> fetchGrammarCardsByDeck(int deckId) async {
     try {
       isLoading.value = true;
@@ -36,7 +36,7 @@ class GrammarController extends GetxController {
       final result = await _apiService.getGrammarCardsByDeck(deckId);
       grammarCards.value = result;
       
-      // Reset counters
+
       currentIndex.value = 0;
       understoodCount.value = 0;
       notUnderstoodCount.value = 0;
@@ -68,7 +68,7 @@ class GrammarController extends GetxController {
     if (currentIndex.value < grammarCards.length - 1) {
       currentIndex.value++;
     } else {
-      // Completed - DON'T auto close here, let UI handle it
+    
       print('Study session completed');
     }
   }

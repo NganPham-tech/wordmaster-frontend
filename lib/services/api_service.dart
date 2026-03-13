@@ -5,7 +5,7 @@ import '../data/models/flashcard_model.dart';
 import '../data/models/grammar_card_model.dart';
 import '../data/models/shadowing_model.dart';
 import 'auth_service.dart';
-
+//D:\DemoDACN\wordmaster_dacn\lib\services\api_service.dart
 class ApiService extends GetConnect {
   static ApiService? _instance;
   static ApiService get instance {
@@ -26,7 +26,7 @@ class ApiService extends GetConnect {
     EnvConfig.printConfig();
 
     httpClient.addRequestModifier<dynamic>((request) {
-      // Add authorization header if user is logged in
+      
       if (Get.isRegistered<AuthService>()) {
         final authService = AuthService.instance;
         final token = authService.token.value;
@@ -128,8 +128,6 @@ class ApiService extends GetConnect {
     }
   }
 
-
-
   Future<List<GrammarCard>> getGrammarCardsByDeck(int deckId) async {
     try {
       final response = await get('/grammar/deck/$deckId');
@@ -152,8 +150,6 @@ class ApiService extends GetConnect {
       rethrow;
     }
   }
-
-
 
   Future<List<dynamic>> getDictationContent(
     Map<String, String> queryParams,

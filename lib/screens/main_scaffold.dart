@@ -8,7 +8,7 @@ import 'profile/profile_screen.dart';
 
 
 
-// Main scaffold với Bottom Navigation Bar
+
 class MainScaffold extends StatefulWidget {
   const MainScaffold({super.key});
 
@@ -21,15 +21,15 @@ class _MainScaffoldState extends State<MainScaffold>
   int _currentIndex = 0;
   late AnimationController _animationController;
 
-  // Badge counts
-  final int _studyDueCount = 15; // Số thẻ đến hạn
-  final int _practiceChallenges = 3; // Số challenges mới
+ 
+  final int _studyDueCount = 15; 
+  final int _practiceChallenges = 3; 
 
   final List<Widget> _screens = [
     const HomeScreen(),
     const FlashcardIndexScreen(),
     const QuizIndexScreen(),
-    const ProfileScreen(), // Sử dụng ProfileScreen từ import
+    const ProfileScreen(), 
   ];
 
   @override
@@ -49,7 +49,7 @@ class _MainScaffoldState extends State<MainScaffold>
 
   void _onItemTapped(int index) {
     if (_currentIndex == index) {
-      // Re-tap: scroll to top hoặc action đặc biệt
+      
       _handleReTap(index);
     } else {
       HapticFeedback.lightImpact();
@@ -62,7 +62,7 @@ class _MainScaffoldState extends State<MainScaffold>
 
   void _handleReTap(int index) {
     HapticFeedback.mediumImpact();
-    // TODO: Implement scroll to top hoặc show modal
+   
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(_getRetapMessage(index)),
@@ -128,7 +128,7 @@ class _MainScaffoldState extends State<MainScaffold>
               color: const Color(0xFFEF4444),
               onTap: () {
                 Navigator.pop(context);
-                // TODO: Navigate to review
+                
               },
             ),
             _buildShortcutTile(
@@ -138,7 +138,7 @@ class _MainScaffoldState extends State<MainScaffold>
               color: const Color(0xFF6366F1),
               onTap: () {
                 Navigator.pop(context);
-                // TODO: Start random
+              
               },
             ),
             _buildShortcutTile(
@@ -148,7 +148,7 @@ class _MainScaffoldState extends State<MainScaffold>
               color: const Color(0xFF10B981),
               onTap: () {
                 Navigator.pop(context);
-                // TODO: Create card
+                
               },
             ),
             const SizedBox(height: 10),
@@ -262,7 +262,7 @@ class _MainScaffoldState extends State<MainScaffold>
       onTap: () {
         HapticFeedback.lightImpact();
         Navigator.pop(context);
-        // TODO: Navigate to practice
+       
       },
       child: Container(
         padding: const EdgeInsets.all(20),

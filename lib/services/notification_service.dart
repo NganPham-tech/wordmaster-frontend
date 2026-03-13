@@ -10,14 +10,14 @@ class NotificationService {
   static NotificationService get instance => _instance;
   bool _isInitialized = false;
 
-  // Khởi tạo Awesome Notifications
+ 
   Future<void> initialize() async {
     try {
       await AwesomeNotifications().initialize(
-        // Icon mặc định (sử dụng null để dùng app icon)
+     
         null,
         [
-          // Channel cho general notifications
+        
           NotificationChannel(
             channelKey: 'basic_channel',
             channelName: 'Basic notifications',
@@ -30,7 +30,7 @@ class NotificationService {
             enableVibration: true,
           ),
         
-        // Channel cho study reminders
+        
         NotificationChannel(
           channelKey: 'study_reminder',
           channelName: 'Study Reminders',
@@ -42,7 +42,7 @@ class NotificationService {
           enableVibration: true,
         ),
         
-        // Channel cho achievements
+        
         NotificationChannel(
           channelKey: 'achievement',
           channelName: 'Achievements',
@@ -54,7 +54,7 @@ class NotificationService {
           enableVibration: true,
         ),
         
-        // Channel cho streak reminders
+ 
         NotificationChannel(
           channelKey: 'streak_reminder',
           channelName: 'Streak Reminders',
@@ -68,10 +68,10 @@ class NotificationService {
         ],
       );
 
-      // Yêu cầu permission
+   
       await requestPermission();
 
-      // Setup listeners
+      
       _setupListeners();
       
       _isInitialized = true;
@@ -86,19 +86,19 @@ class NotificationService {
     }
   }
 
-  // Yêu cầu quyền thông báo
+
   Future<bool> requestPermission() async {
     return await AwesomeNotifications().requestPermissionToSendNotifications();
   }
 
-  // Kiểm tra permission
+ 
   Future<bool> isNotificationAllowed() async {
     return await AwesomeNotifications().isNotificationAllowed();
   }
 
-  // Setup listeners
+
   void _setupListeners() {
-    // Khi người dùng tap vào notification
+  
     AwesomeNotifications().setListeners(
       onActionReceivedMethod: onActionReceivedMethod,
       onNotificationCreatedMethod: onNotificationCreatedMethod,
@@ -107,11 +107,8 @@ class NotificationService {
     );
   }
 
-  // ========================================
-  // NOTIFICATION METHODS
-  // ========================================
 
-  // 1. Hiển thị thông báo đơn giản
+
   Future<void> showBasicNotification({
     required String title,
     required String body,
@@ -143,7 +140,7 @@ class NotificationService {
     }
   }
 
-  // 2. Hiển thị achievement notification
+
   Future<void> showAchievementNotification({
     required String title,
     required String message,
@@ -185,7 +182,7 @@ class NotificationService {
     }
   }
 
-  // 3. Hiển thị study reminder
+
   Future<void> showStudyReminder({
     required String title,
     required String message,
@@ -229,7 +226,7 @@ class NotificationService {
     }
   }
 
-  // 4. Hiển thị streak warning
+ 
   Future<void> showStreakWarning({
     required int currentStreak,
   }) async {
@@ -268,7 +265,6 @@ class NotificationService {
     }
   }
 
-  // 5. Lên lịch thông báo hàng ngày (Daily Reminder)
   Future<void> scheduleDailyReminder({
     required int hour,
     required int minute,
@@ -278,7 +274,7 @@ class NotificationService {
     try {
       await AwesomeNotifications().createNotification(
         content: NotificationContent(
-          id: 1, // Fixed ID để có thể cancel sau
+          id: 1, 
           channelKey: 'study_reminder',
           title: title ?? 'Đến giờ học rồi!',
           body: message ?? 'Hãy dành vài phút để học tiếng Anh mỗi ngày!',
@@ -290,7 +286,7 @@ class NotificationService {
           minute: minute,
           second: 0,
           millisecond: 0,
-          repeats: true, // Lặp lại hàng ngày
+          repeats: true, 
         ),
         actionButtons: [
           NotificationActionButton(
@@ -307,7 +303,7 @@ class NotificationService {
     }
   }
 
-  // 6. Hủy notification đã lên lịch
+
   Future<void> cancelScheduledNotification(int id) async {
     if (!_isInitialized) {
       if (kDebugMode) {
@@ -325,7 +321,7 @@ class NotificationService {
     }
   }
 
-  // 7. Hủy tất cả notifications
+  
   Future<void> cancelAllNotifications() async {
     if (!_isInitialized) {
       if (kDebugMode) {
@@ -343,7 +339,7 @@ class NotificationService {
     }
   }
 
-  // 8. Hiển thị progress notification
+  
   Future<void> showProgressNotification({
     required String title,
     required String body,
@@ -360,7 +356,7 @@ class NotificationService {
     try {
       await AwesomeNotifications().createNotification(
         content: NotificationContent(
-          id: 100, // Fixed ID để update progress
+          id: 100, 
           channelKey: 'basic_channel',
           title: title,
           body: body,
@@ -377,9 +373,6 @@ class NotificationService {
     }
   }
 
-  // ========================================
-  // LISTENERS
-  // ========================================
 
   @pragma("vm:entry-point")
   static Future<void> onNotificationCreatedMethod(
@@ -404,22 +397,22 @@ class NotificationService {
       ReceivedAction receivedAction) async {
     print('Action received: ${receivedAction.buttonKeyPressed}');
 
-    // Xử lý các action
+   
     switch (receivedAction.buttonKeyPressed) {
       case 'VIEW':
-        // Navigate to achievement page
+       
         print('Navigate to achievement');
         break;
       case 'STUDY_NOW':
-        // Navigate to study page
+       
         print('Navigate to study');
         break;
       case 'SAVE_STREAK':
-        // Navigate to home and start studying
+     
         print('Save streak');
         break;
       case 'REMIND_LATER':
-        // Schedule reminder 1 hour later
+      
         print('Remind later');
         break;
     }

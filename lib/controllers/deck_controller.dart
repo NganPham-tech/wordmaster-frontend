@@ -11,7 +11,7 @@ class DeckController extends GetxController {
   final RxString error = ''.obs;
   final RxString searchQuery = ''.obs;
 
-  // Computed - filtered decks
+
   List<Deck> get filteredDecks {
     if (searchQuery.value.isEmpty) return decks;
     
@@ -28,7 +28,7 @@ class DeckController extends GetxController {
     fetchDecks();
   }
 
-  // Fetch vocabulary decks
+
   Future<void> fetchDecks() async {
     try {
       isLoading.value = true;
@@ -53,7 +53,7 @@ class DeckController extends GetxController {
     }
   }
 
-  // Get deck by ID
+
   Future<Deck?> getDeckById(int id) async {
     try {
       return await _apiService.getDeckById(id);
@@ -67,12 +67,12 @@ class DeckController extends GetxController {
     }
   }
 
-  // Update search query
+
   void updateSearchQuery(String query) {
     searchQuery.value = query;
   }
 
-  // Refresh
+
   Future<void> refresh() async {
     await fetchDecks();
   }

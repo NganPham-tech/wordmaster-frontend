@@ -7,6 +7,7 @@ import '../../controllers/flashcard_controller.dart';
 import '../../services/tts_service.dart';
 import 'result_screen.dart';
 import '../../controllers/session_controller.dart';
+import '../../controllers/srs_controller.dart';
 
 class StudyVocabScreen extends StatefulWidget {
   final int deckId;
@@ -35,8 +36,9 @@ class _StudyVocabScreenState extends State<StudyVocabScreen>
   void initState() {
     super.initState();
     
-    // Initialize controller
+    // Initialize controllers
     flashcardController = Get.put(FlashcardController());
+    Get.put(SrsController()); // Initialize SRS controller for integration
     
     // Initialize TTS service
     TtsService.initialize();
@@ -101,11 +103,26 @@ class _StudyVocabScreenState extends State<StudyVocabScreen>
     final isLastCard = flashcardController.currentIndex.value >= 
         flashcardController.flashcards.length - 1;
 
-    // 🆕 UPDATE SESSION - thêm điểm nếu biết từ
+    
     if (known) {
       sessionController.incrementCompleted(scoreIncrement: 10.0);
     } else {
       sessionController.incrementCompleted(scoreIncrement: 0);
+    }
+
+    // SRS INTEGRATION - gửi kết quả học tập lên hệ thống SRS
+    final currentCard = flashcardController.currentCard;
+    if (currentCard != null) {
+      try {
+        final srsController = Get.find<SrsController>();
+        srsController.submitFlashcardResult(
+          contentType: 'Flashcard',
+          contentId: currentCard.id,
+          isCorrect: known,
+        );
+      } catch (e) {
+        print('SRS integration error: $e');
+      }
     }
 
     if (isLastCard) {
@@ -118,14 +135,14 @@ class _StudyVocabScreenState extends State<StudyVocabScreen>
   }
 
   void _showCompletionDialog() async {
-    // 🆕 COMPLETE SESSION
+  
     await sessionController.completeSession();
     
     Get.dialog(
       AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text(
-          '🎉 Hoàn thành!',
+          ' Hoàn thành!',
           textAlign: TextAlign.center,
           style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
         ),
@@ -170,7 +187,7 @@ class _StudyVocabScreenState extends State<StudyVocabScreen>
                 ),
               ],
             ),
-            // 🆕 HIỂN THỊ ĐIỂM
+            
             const SizedBox(height: 16),
             Container(
               padding: const EdgeInsets.all(12),
@@ -205,7 +222,7 @@ class _StudyVocabScreenState extends State<StudyVocabScreen>
             onPressed: () {
               Get.back(); // Close dialog
               Get.back(); // Back to list
-              sessionController.endSession(); // 🆕 END SESSION
+              sessionController.endSession(); 
             },
             child: const Text('Về danh sách'),
           ),
@@ -219,7 +236,7 @@ class _StudyVocabScreenState extends State<StudyVocabScreen>
                 unknownCards: flashcardController.unknownCount.value,
                 type: 'vocabulary',
               ));
-              sessionController.endSession(); // 🆕 END SESSION
+              sessionController.endSession(); 
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF6366F1),
@@ -248,7 +265,7 @@ class _StudyVocabScreenState extends State<StudyVocabScreen>
                 fontSize: 16,
               ),
             ),
-            // 🆕 HIỂN THỊ ĐIỂM REAL-TIME
+            
             Obx(() => Text(
               '${sessionController.currentScore.toInt()} XP',
               style: const TextStyle(
@@ -276,7 +293,7 @@ class _StudyVocabScreenState extends State<StudyVocabScreen>
                     ),
                     TextButton(
                       onPressed: () async {
-                        // 🆕 COMPLETE SESSION khi thoát giữa chừng
+                        
                         await sessionController.completeSession();
                         Get.back(); // Close dialog
                         Get.back(); // Back to list

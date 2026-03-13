@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '/data/models/shadowing_model.dart';
-//D:\DemoDACN\wordmaster_dacn\lib\screens\shadowing\shadowing_result_screen.dart
+
 class ShadowingResultScreen extends StatelessWidget {
   final ShadowingResult result;
 
@@ -30,7 +30,7 @@ class ShadowingResultScreen extends StatelessWidget {
             const SizedBox(height: 24),
             
             // Action buttons
-            _buildActionButtons(context), // Đã thêm context
+            _buildActionButtons(context), 
           ],
         ),
       ),
@@ -45,7 +45,7 @@ class ShadowingResultScreen extends StatelessWidget {
         child: Column(
           children: [
             const Text(
-              'Session Completed! 🎉',
+              'Session Completed!',
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
@@ -222,7 +222,7 @@ class ShadowingResultScreen extends StatelessWidget {
     );
   }
 
-  // Đã thêm tham số BuildContext
+
   Widget _buildActionButtons(BuildContext context) {
     return Row(
       children: [

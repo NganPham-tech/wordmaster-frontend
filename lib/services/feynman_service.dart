@@ -14,7 +14,7 @@ class FeynmanService {
   }) async {
     try {
       final userId = _authService.userId;
-      print('💾 Saving Feynman note for user: $userId, card: $cardType/$cardId');
+      print('Saving Feynman note for user: $userId, card: $cardType/$cardId');
       
       final response = await _apiService.post('/feynman/notes', {
         'userId': userId,
@@ -40,7 +40,7 @@ class FeynmanService {
     }
   }
 
-  // Lấy Feynman note cho một card
+
   Future<FeynmanNote?> getNote({
     required String cardType,
     required int cardId,
@@ -63,14 +63,14 @@ class FeynmanService {
         }
       }
       
-      return null; // No note found
+      return null; 
     } catch (e) {
       print('Error getting Feynman note: $e');
       return null;
     }
   }
 
-  // Lấy tất cả Feynman notes của user
+ 
   Future<List<FeynmanNote>> getAllNotes({String? cardType}) async {
     try {
       final userId = _authService.userId;
@@ -96,7 +96,7 @@ class FeynmanService {
     }
   }
 
-  // Xóa Feynman note
+  
   Future<bool> deleteNote({
     required String cardType,
     required int cardId,

@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 class QuizTopic {
   final int id;
   final String name;
@@ -57,25 +59,29 @@ class QuizTopic {
       tags.add(map['category']['name']);
     }
     if (map['quizType'] != null) {
-      tags.add(_getEmojiForType(map['quizType']));
+      tags.add(map['quizType']); // Chỉ add tên type, không add emoji
     }
     return tags;
   }
 
-  static String _getEmojiForType(String type) {
+  static Widget getIconWidget(String type, {double size = 24.0, Color? color}) {
+    color = color ?? Colors.blue;
+    
     switch (type.toLowerCase()) {
       case 'vocabulary':
-        return '📚';
+        return _VocabularyIcon(size: size, color: color);
       case 'grammar':
-        return '✏️';
+        return _GrammarIcon(size: size, color: color);
       case 'listening':
-        return '🎧';
+        return _ListeningIcon(size: size, color: color);
       case 'reading':
-        return '📖';
+        return _ReadingIcon(size: size, color: color);
       default:
-        return '📝';
+        return _DefaultQuizIcon(size: size, color: color);
     }
   }
+
+
 
   Map<String, dynamic> toMap() {
     return {
@@ -230,5 +236,273 @@ class QuizResult {
       'completed_at': completedAt.toIso8601String(),
       'percentage': percentage,
     };
+  }
+}
+
+// Custom Icon Widgets
+class _VocabularyIcon extends StatelessWidget {
+  final double size;
+  final Color color;
+  
+  const _VocabularyIcon({required this.size, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(size * 0.2),
+        border: Border.all(color: color, width: 2),
+      ),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Container(
+            width: size * 0.6,
+            height: size * 0.8,
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          Positioned(
+            top: size * 0.15,
+            child: Container(
+              width: size * 0.4,
+              height: 2,
+              color: color,
+            ),
+          ),
+          Positioned(
+            top: size * 0.35,
+            child: Container(
+              width: size * 0.4,
+              height: 2,
+              color: color,
+            ),
+          ),
+          Positioned(
+            top: size * 0.55,
+            child: Container(
+              width: size * 0.4,
+              height: 2,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _GrammarIcon extends StatelessWidget {
+  final double size;
+  final Color color;
+  
+  const _GrammarIcon({required this.size, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(size * 0.2),
+      ),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // Pencil body
+          Container(
+            width: size * 0.15,
+            height: size * 0.7,
+            decoration: BoxDecoration(
+              color: color,
+              borderRadius: BorderRadius.circular(size * 0.075),
+            ),
+          ),
+          // Pencil tip
+          Positioned(
+            bottom: size * 0.1,
+            child: Container(
+              width: 0,
+              height: 0,
+              decoration: BoxDecoration(
+                border: Border(
+                  left: BorderSide(
+                    color: Colors.transparent,
+                    width: size * 0.075,
+                  ),
+                  right: BorderSide(
+                    color: Colors.transparent,
+                    width: size * 0.075,
+                  ),
+                  bottom: BorderSide(
+                    color: color,
+                    width: size * 0.15,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          // Eraser
+          Positioned(
+            top: size * 0.1,
+            child: Container(
+              width: size * 0.2,
+              height: size * 0.15,
+              decoration: BoxDecoration(
+                color: Colors.pink,
+                borderRadius: BorderRadius.circular(size * 0.075),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ListeningIcon extends StatelessWidget {
+  final double size;
+  final Color color;
+  
+  const _ListeningIcon({required this.size, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(size * 0.5),
+      ),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // Headphone arc
+          Container(
+            width: size * 0.8,
+            height: size * 0.8,
+            decoration: BoxDecoration(
+              border: Border.all(color: color, width: 3),
+              borderRadius: BorderRadius.circular(size * 0.4),
+            ),
+          ),
+          // Left ear piece
+          Positioned(
+            left: size * 0.05,
+            child: Container(
+              width: size * 0.15,
+              height: size * 0.3,
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(size * 0.075),
+              ),
+            ),
+          ),
+          // Right ear piece
+          Positioned(
+            right: size * 0.05,
+            child: Container(
+              width: size * 0.15,
+              height: size * 0.3,
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(size * 0.075),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ReadingIcon extends StatelessWidget {
+  final double size;
+  final Color color;
+  
+  const _ReadingIcon({required this.size, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(size * 0.1),
+      ),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // Book pages
+          Container(
+            width: size * 0.7,
+            height: size * 0.8,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(3),
+              border: Border.all(color: color, width: 2),
+            ),
+          ),
+          // Book spine
+          Positioned(
+            left: size * 0.15,
+            child: Container(
+              width: 3,
+              height: size * 0.8,
+              color: color,
+            ),
+          ),
+          // Text lines
+          Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(width: size * 0.4, height: 1.5, color: color.withOpacity(0.6)),
+              SizedBox(height: size * 0.08),
+              Container(width: size * 0.35, height: 1.5, color: color.withOpacity(0.6)),
+              SizedBox(height: size * 0.08),
+              Container(width: size * 0.4, height: 1.5, color: color.withOpacity(0.6)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DefaultQuizIcon extends StatelessWidget {
+  final double size;
+  final Color color;
+  
+  const _DefaultQuizIcon({required this.size, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(size * 0.2),
+        border: Border.all(color: color, width: 2),
+      ),
+      child: Center(
+        child: Text(
+          '?',
+          style: TextStyle(
+            fontSize: size * 0.6,
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
+        ),
+      ),
+    );
   }
 }

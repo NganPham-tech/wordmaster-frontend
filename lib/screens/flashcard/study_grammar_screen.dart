@@ -7,6 +7,8 @@ import '../../services/learning_session_service.dart';
 import 'result_screen.dart';
 import 'widgets/feynman_dialog.dart';
 import 'widgets/feynman_note_display.dart';
+import '../../controllers/srs_controller.dart';
+//D:\DemoDACN\wordmaster_dacn\lib\screens\flashcard\study_grammar_screen.dart
 class StudyGrammarScreen extends StatefulWidget {
   final int topicId;
   final String topicName;
@@ -34,6 +36,9 @@ class _StudyGrammarScreenState extends State<StudyGrammarScreen>
   @override
   void initState() {
     super.initState();
+    
+    // Initialize SRS controller for integration
+    Get.put(SrsController());
     
     // Fetch grammar cards for this deck
     grammarController.fetchGrammarCardsByDeck(widget.topicId).then((_) {
@@ -111,6 +116,20 @@ class _StudyGrammarScreenState extends State<StudyGrammarScreen>
   final currentCard = grammarController.currentCard;
   final isLastCard = grammarController.currentIndex.value >= 
       grammarController.grammarCards.length - 1;
+
+  // 🆕 SRS INTEGRATION - gửi kết quả học tập lên hệ thống SRS
+  if (currentCard != null) {
+    try {
+      final srsController = Get.find<SrsController>();
+      srsController.submitFlashcardResult(
+        contentType: 'Grammar',
+        contentId: currentCard.id,
+        isCorrect: understood,
+      );
+    } catch (e) {
+      print('SRS integration error: $e');
+    }
+  }
 
   // LUÔN update count trước khi hiển thị dialog
   grammarController.nextCard(understood);

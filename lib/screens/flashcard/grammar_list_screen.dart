@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../../controllers/grammar_deck_controller.dart';
 import 'study_grammar_screen.dart';
-
+//D:\DemoDACN\wordmaster_dacn\lib\screens\flashcard\grammar_list_screen.dart
 class GrammarListScreen extends StatelessWidget {
   const GrammarListScreen({super.key});
 

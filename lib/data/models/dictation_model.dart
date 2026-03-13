@@ -8,7 +8,7 @@ class DictationContent {
   final String sourceType;
   final String sourceURL;
   final String? thumbnail;
-  final String? audioPath;  // Filename from DB
+  final String? audioPath;  
   final String transcript;
   final int duration;
   final String difficulty;

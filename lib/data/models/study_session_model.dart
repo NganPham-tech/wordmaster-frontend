@@ -7,7 +7,7 @@ class StudySession {
   final double? score;
   final int? totalItems;
   final int? completedItems;
-  final int? duration; // seconds
+  final int? duration; 
   final DateTime startedAt;
   final DateTime? completedAt;
 

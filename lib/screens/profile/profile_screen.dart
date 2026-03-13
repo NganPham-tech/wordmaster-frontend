@@ -24,7 +24,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   
   late TabController _tabController;
   
-  // Data variables
+
   UserProfile? _userProfile;
   Map<String, dynamic>? _userStats;
   List<StudyStat> _weeklyStats = [];
@@ -51,7 +51,7 @@ class _ProfileScreenState extends State<ProfileScreen>
     setState(() => _isLoading = true);
 
     try {
-      // Load all data in parallel including achievements from API
+ 
       final results = await Future.wait([
         _userService.getUserProfile(),
         _userService.getUserStats(),
@@ -69,7 +69,7 @@ class _ProfileScreenState extends State<ProfileScreen>
         _userAchievements = results[4] as List<Achievement>;
         _achievementStats = results[5] as AchievementStats?;
         
-        // Nếu không load được profile từ API, tạo profile từ AuthService
+    
         if (_userProfile == null) {
           _userProfile = UserProfile(
             id: _authService.userId.toString(),
@@ -92,7 +92,7 @@ class _ProfileScreenState extends State<ProfileScreen>
           );
         }
         
-        // Update profile with stats
+      
         if (_userStats != null) {
           _userProfile = UserProfile(
             id: _userProfile!.id,
@@ -118,7 +118,7 @@ class _ProfileScreenState extends State<ProfileScreen>
     } catch (e) {
       print('Error loading user data: $e');
       
-      // Vẫn tạo profile cơ bản từ AuthService để không bị lỗi
+
       setState(() {
         _userProfile = UserProfile(
           id: _authService.userId.toString(),
@@ -164,7 +164,7 @@ class _ProfileScreenState extends State<ProfileScreen>
       );
     }
 
-    // Luôn hiển thị UI ngay cả khi chưa có dữ liệu
+   
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       body: SafeArea(
@@ -346,7 +346,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   Widget _buildStatsTab() {
-    // Check if user has any learning data
+  
     final hasData = (_userProfile?.totalCardsLearned ?? 0) > 0 ||
         (_userProfile?.totalQuizzesCompleted ?? 0) > 0 ||
         _weeklyStats.isNotEmpty ||
@@ -360,7 +360,7 @@ class _ProfileScreenState extends State<ProfileScreen>
         child: Column(
           children: [
             if (!hasData) ...[
-              // Empty state for new users
+              
               const SizedBox(height: 40),
               Container(
                 padding: const EdgeInsets.all(32),
@@ -908,6 +908,7 @@ class _ProfileScreenState extends State<ProfileScreen>
       : 0.0;
 
   return Column(
+    mainAxisSize: MainAxisSize.min,
     children: [
       // Achievement Summary Card với animation gradient
       Container(
@@ -1088,6 +1089,7 @@ class _ProfileScreenState extends State<ProfileScreen>
           ],
         ),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
@@ -1118,74 +1120,49 @@ class _ProfileScreenState extends State<ProfileScreen>
             const SizedBox(height: 20),
 
             // Grid of achievements
-            GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3,
-                childAspectRatio: 0.85,
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
+            ConstrainedBox(
+              constraints: const BoxConstraints(
+                maxHeight: 180, // Giới hạn chiều cao để tránh overflow
               ),
-              itemCount: _userAchievements.take(6).length,
-              itemBuilder: (context, index) {
-                final achievement = _userAchievements[index];
-                return _buildAchievementBadge(achievement);
-              },
+              child: GridView.builder(
+                shrinkWrap: true,
+                physics: const ClampingScrollPhysics(), // Cho phép cuộn
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 3,
+                  childAspectRatio: 0.75,
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 8,
+                ),
+                itemCount: _userAchievements.length, // Hiển thị tất cả achievements
+                itemBuilder: (context, index) {
+                  final achievement = _userAchievements[index];
+                  return _buildAchievementBadge(achievement);
+                },
+              ),
             ),
 
             if (_userAchievements.length > 6) ...[
-              const SizedBox(height: 16),
-              InkWell(
-                onTap: _showAllAchievements,
-                borderRadius: BorderRadius.circular(12),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        const Color(0xFF6366F1).withOpacity(0.1),
-                        const Color(0xFF8B5CF6).withOpacity(0.1),
-                      ],
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.keyboard_arrow_up,
+                      color: Colors.grey[400],
+                      size: 20,
                     ),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: const Color(0xFF6366F1).withOpacity(0.3),
-                      width: 1.5,
+                    const SizedBox(width: 4),
+                    Text(
+                      'Cuộn lên để xem thêm ${_userAchievements.length - 6} huy hiệu',
+                      style: TextStyle(
+                        color: Colors.grey[500],
+                        fontSize: 12,
+                        fontStyle: FontStyle.italic,
+                      ),
                     ),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Text(
-                        'Xem tất cả',
-                        style: TextStyle(
-                          color: Color(0xFF6366F1),
-                          fontWeight: FontWeight.bold,
-                          fontSize: 15,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF6366F1),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Text(
-                          '+${_userAchievements.length - 6}',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                  ],
                 ),
               ),
             ],
@@ -1226,6 +1203,7 @@ Widget _buildAchievementBadge(Achievement achievement) {
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
         children: [
           // Badge icon với glow effect cho unlocked achievements
           Stack(
@@ -1233,8 +1211,8 @@ Widget _buildAchievementBadge(Achievement achievement) {
             children: [
               if (achievement.isUnlocked)
                 Container(
-                  width: 55,
-                  height: 55,
+                  width: 45,
+                  height: 45,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: RadialGradient(
@@ -1246,8 +1224,8 @@ Widget _buildAchievementBadge(Achievement achievement) {
                   ),
                 ),
               Container(
-                width: 50,
-                height: 50,
+                width: 40,
+                height: 40,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   gradient: achievement.isUnlocked
@@ -1290,35 +1268,35 @@ Widget _buildAchievementBadge(Achievement achievement) {
             ],
           ),
 
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
 
           // Achievement title
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 2),
             child: Text(
               achievement.title ?? 'Achievement',
               style: TextStyle(
-                fontSize: 11,
+                fontSize: 10,
                 fontWeight: FontWeight.bold,
                 color: achievement.isUnlocked
                     ? const Color(0xFF1E293B)
                     : Colors.grey[500],
               ),
               textAlign: TextAlign.center,
-              maxLines: 2,
+              maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
           ),
 
-          const SizedBox(height: 6),
+          const SizedBox(height: 4),
 
           // Progress indicator hoặc points badge
           if (achievement.isUnlocked)
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
               decoration: BoxDecoration(
                 color: Colors.amber,
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(6),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -1326,14 +1304,14 @@ Widget _buildAchievementBadge(Achievement achievement) {
                   const Icon(
                     Icons.stars,
                     color: Colors.white,
-                    size: 10,
+                    size: 8,
                   ),
-                  const SizedBox(width: 2),
+                  const SizedBox(width: 1),
                   Text(
                     '+${achievement.points}',
                     style: const TextStyle(
                       color: Colors.white,
-                      fontSize: 10,
+                      fontSize: 9,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -1342,12 +1320,12 @@ Widget _buildAchievementBadge(Achievement achievement) {
             )
           else
             SizedBox(
-              width: 40,
+              width: 30,
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(4),
+                borderRadius: BorderRadius.circular(2),
                 child: LinearProgressIndicator(
                   value: percentage,
-                  minHeight: 4,
+                  minHeight: 3,
                   backgroundColor: Colors.grey[300],
                   valueColor: const AlwaysStoppedAnimation<Color>(
                     Color(0xFF6366F1),

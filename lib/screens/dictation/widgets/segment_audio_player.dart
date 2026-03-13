@@ -48,17 +48,17 @@ class _SegmentAudioPlayerState extends State<SegmentAudioPlayer> {
   }
 
   void _updateSegment() {
-    // Stop current playback first
+    
     _audioPlayer.pause();
     
-    // Recalculate segment times
+
     _segmentStart = Duration(milliseconds: (widget.segment.startTime * 1000).toInt());
     _segmentEnd = Duration(milliseconds: (widget.segment.endTime * 1000).toInt());
     _segmentDuration = _segmentEnd - _segmentStart;
 
     print('Updated to Segment ${widget.segment.orderIndex}: ${_segmentStart.inSeconds}s - ${_segmentEnd.inSeconds}s');
 
-    // Reset state completely
+
     setState(() {
       _currentPosition = Duration.zero;
       _isPlaying = false;
@@ -66,26 +66,26 @@ class _SegmentAudioPlayerState extends State<SegmentAudioPlayer> {
   }
 
   void _initPlayer() {
-    // Calculate segment times
+
     _segmentStart = Duration(milliseconds: (widget.segment.startTime * 1000).toInt());
     _segmentEnd = Duration(milliseconds: (widget.segment.endTime * 1000).toInt());
     _segmentDuration = _segmentEnd - _segmentStart;
 
     print('Segment ${widget.segment.orderIndex}: ${_segmentStart.inSeconds}s - ${_segmentEnd.inSeconds}s');
 
-    // Listen to position changes
+    
     _audioPlayer.onPositionChanged.listen((position) {
-      // Only process if we're currently playing
+      
       if (!_isPlaying) return;
       
-      // Check if we're within segment bounds
+      
       if (position >= _segmentStart && position <= _segmentEnd) {
         setState(() {
           _currentPosition = position - _segmentStart;
         });
       }
 
-      // Auto-stop when reaching segment end (with small buffer for precision)
+      
       if (position >= _segmentEnd - const Duration(milliseconds: 100) && _isPlaying) {
         print('Segment completed at position: ${position.inSeconds}s');
         _stopPlayback();
@@ -93,7 +93,7 @@ class _SegmentAudioPlayerState extends State<SegmentAudioPlayer> {
       }
     });
 
-    // Listen to player state
+  
     _audioPlayer.onPlayerStateChanged.listen((state) {
       if (mounted) {
         setState(() {

@@ -129,6 +129,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
+      resizeToAvoidBottomInset: true,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -137,7 +138,7 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Logo & Title
+                
                 const SizedBox(height: 40),
                 Center(
                   child: Container(
@@ -188,7 +189,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 12),
                 _buildSocialLoginButton(
                   onTap: _handleFacebookLogin,
-                  icon: 'assets/images/facebook_icon.png', // Hoặc dùng Icon
+                  icon: 'assets/images/facebook_icon.png', 
                   label: 'Đăng nhập với Facebook',
                   backgroundColor: const Color(0xFF1877F2),
                   textColor: Colors.white,
@@ -211,7 +212,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 24),
 
-                // Email Field
+              
                 Text(
                   'Email',
                   style: TextStyle(
@@ -313,7 +314,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 12),
 
-                // Forgot Password
+               
                 Align(
                   alignment: Alignment.centerRight,
                   child: TextButton(
@@ -335,7 +336,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 24),
 
-                // Login Button
+           
                 SizedBox(
                   width: double.infinity,
                   height: 54,
@@ -372,7 +373,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 24),
 
-                // Register Link
+              
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -433,7 +434,7 @@ class _LoginScreenState extends State<LoginScreen> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Icon - có thể dùng Image.asset hoặc Icon widget
+           
             if (icon.contains('google'))
               const Icon(Icons.g_mobiledata, size: 28, color: Color(0xFF4285F4))
             else if (icon.contains('facebook'))

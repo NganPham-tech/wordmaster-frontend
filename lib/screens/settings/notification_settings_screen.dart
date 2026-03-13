@@ -1,5 +1,3 @@
-
-
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../services/notification_service.dart';
@@ -102,9 +100,7 @@ class _NotificationSettingsScreenState
                 const SizedBox(height: 24),
               ],
 
-              // Test notifications
-              _buildSectionTitle('Kiểm tra'),
-              _buildTestNotificationsCard(),
+
             ],
           ],
         ),
@@ -386,160 +382,7 @@ class _NotificationSettingsScreenState
     );
   }
 
-  Widget _buildTestNotificationsCard() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          ListTile(
-            leading: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: const Color(0xFF6366F1).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(
-                Icons.notifications_none,
-                color: Color(0xFF6366F1),
-                size: 20,
-              ),
-            ),
-            title: const Text(
-              'Thông báo đơn giản',
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF1E293B),
-              ),
-            ),
-            subtitle: const Text(
-              'Kiểm tra thông báo cơ bản',
-              style: TextStyle(fontSize: 12),
-            ),
-            trailing: ElevatedButton(
-              onPressed: () {
-                _notificationService.showBasicNotification(
-                  title: 'Test Notification',
-                  body: 'Đây là thông báo test từ WordMaster!',
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF6366F1),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: const Text(
-                'Test',
-                style: TextStyle(color: Colors.white, fontSize: 12),
-              ),
-            ),
-          ),
-          _buildDivider(),
-          ListTile(
-            leading: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFA500).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(
-                Icons.emoji_events,
-                color: Color(0xFFFFA500),
-                size: 20,
-              ),
-            ),
-            title: const Text(
-              'Thành tích',
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF1E293B),
-              ),
-            ),
-            subtitle: const Text(
-              'Kiểm tra thông báo achievement',
-              style: TextStyle(fontSize: 12),
-            ),
-            trailing: ElevatedButton(
-              onPressed: () {
-                _notificationService.showAchievementNotification(
-                  title: 'First Steps',
-                  message: 'Hoàn thành bài học đầu tiên',
-                  points: 10,
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFFFA500),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: const Text(
-                'Test',
-                style: TextStyle(color: Colors.white, fontSize: 12),
-              ),
-            ),
-          ),
-          _buildDivider(),
-          ListTile(
-            leading: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: const Color(0xFFEF4444).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(
-                Icons.local_fire_department,
-                color: Color(0xFFEF4444),
-                size: 20,
-              ),
-            ),
-            title: const Text(
-              'Cảnh báo Streak',
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF1E293B),
-              ),
-            ),
-            subtitle: const Text(
-              'Kiểm tra cảnh báo streak',
-              style: TextStyle(fontSize: 12),
-            ),
-            trailing: ElevatedButton(
-              onPressed: () {
-                _notificationService.showStreakWarning(currentStreak: 7);
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFEF4444),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: const Text(
-                'Test',
-                style: TextStyle(color: Colors.white, fontSize: 12),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+
 
   Widget _buildNotificationToggle({
     required IconData icon,

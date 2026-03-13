@@ -4,7 +4,7 @@ import '../services/api_service.dart';
 class QuizAPI {
   static final _apiService = ApiService.instance;
 
-  // Lấy danh sách quiz topics từ backend
+ 
   static Future<List<QuizTopic>> getTopics() async {
     try {
       final response = await _apiService.get('/quiz');
@@ -17,7 +17,7 @@ class QuizAPI {
         }
       }
 
-      // Fallback to mock data if API fails
+     
       print('Failed to fetch quizzes from API, using mock data');
       return _getMockTopics();
     } catch (e) {
@@ -26,7 +26,7 @@ class QuizAPI {
     }
   }
 
-  // Lấy danh sách câu hỏi cho một topic từ backend
+  
   static Future<List<QuizQuestion>> getQuestions(int topicId) async {
     try {
       final response = await _apiService.get('/quiz/$topicId');
@@ -42,7 +42,7 @@ class QuizAPI {
         }
       }
 
-      // Fallback to mock data if API fails
+      
       print('Failed to fetch questions from API, using mock data');
       return _getMockQuestions(topicId);
     } catch (e) {
@@ -74,7 +74,7 @@ class QuizAPI {
     }
   }
 
-  // Mock data cho quiz topics (fallback)
+  
   static List<QuizTopic> _getMockTopics() {
     return [
       QuizTopic(

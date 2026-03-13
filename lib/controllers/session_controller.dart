@@ -108,8 +108,7 @@ class SessionController extends GetxController {
         if (sessionData is Map<String, dynamic>) {
           currentSession.value = StudySession.fromJson(sessionData);
         }
-        
-        // 🆕 CHECK FOR UNLOCKED ACHIEVEMENTS
+    
         final unlockedAchievements = completedSession['unlockedAchievements'];
             
         if (unlockedAchievements != null && unlockedAchievements.isNotEmpty) {
@@ -134,12 +133,12 @@ class SessionController extends GetxController {
       try {
         final achievement = Achievement.fromJson(achievementData);
         
-        // Wait a bit before showing next achievement
+        
         await Future.delayed(const Duration(milliseconds: 500));
         
         AchievementDialog.show(achievement);
         
-        // Wait for dialog to close before showing next
+   
         await Future.delayed(const Duration(seconds: 2));
       } catch (e) {
         print('Error parsing achievement: $e');
@@ -147,7 +146,7 @@ class SessionController extends GetxController {
     }
   }
   
-  //
+
   void endSession() {
     currentSession.value = null;
     _sessionStartTime = null;

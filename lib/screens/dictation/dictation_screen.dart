@@ -21,9 +21,16 @@ class DictationScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(
         title: const Row(
           children: [
+            Icon(
+              Icons.headphones,
+              color: Color(0xFF6366F1),
+              size: 24,
+            ),
+            SizedBox(width: 12),
             Text(
               'Dictation Practice',
               style: TextStyle(
@@ -31,8 +38,6 @@ class DictationScreen extends StatelessWidget {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            SizedBox(width: 8),
-            Text('🎧', style: TextStyle(fontSize: 24)),
           ],
         ),
         backgroundColor: Colors.white,
@@ -539,7 +544,7 @@ class DictationScreen extends StatelessWidget {
                   Obx(() => ElevatedButton(
                     onPressed: controller.isLoading.value ? null : () async {
                       if (linkController.text.trim().isNotEmpty) {
-                        // Get real user ID from auth service with fallback
+                        
                         final userId = AuthService.instance.userId;
                         final safeUserId = userId > 0 ? userId : 2;
                         final success = await controller.addYouTubeVideo(

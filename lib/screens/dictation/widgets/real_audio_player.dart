@@ -82,46 +82,56 @@ class _RealAudioPlayerState extends State<RealAudioPlayer> {
 
   Future<void> _loadAudio() async {
     if (widget.audioUrl == null || widget.audioUrl!.isEmpty) {
-      setState(() {
-        _error = 'No audio URL provided';
-      });
+      if (mounted) {
+        setState(() {
+          _error = 'No audio URL provided';
+        });
+      }
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
+    if (mounted) {
+      setState(() {
+        _isLoading = true;
+        _error = null;
+      });
+    }
 
     try {
       print('Loading audio from: ${widget.audioUrl}');
       await _audioPlayer.setSourceUrl(widget.audioUrl!);
       print('Audio loaded successfully');
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     } catch (e) {
       print('Audio load error: $e');
-      setState(() {
-        _isLoading = false;
-        _error = 'Failed to load audio: $e';
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _error = 'Failed to load audio: $e';
+        });
+      }
     }
   }
 
   Future<void> _togglePlayPause() async {
+    if (!mounted) return;
+    
     try {
       if (_isPlaying) {
         await _audioPlayer.pause();
       } else {
-        // Check if audio is loaded and ready to play
+        
         if (_duration == Duration.zero && !_isLoading) {
           await _loadAudio();
-          // Wait a moment for audio to load before playing
+          
           await Future.delayed(const Duration(milliseconds: 500));
         }
         
-        // Use play() for initial playback, resume() for continuing paused audio
+        
         if (_position == Duration.zero || _audioPlayer.state == PlayerState.stopped) {
           await _audioPlayer.play(UrlSource(widget.audioUrl!));
         } else {
@@ -130,12 +140,14 @@ class _RealAudioPlayerState extends State<RealAudioPlayer> {
       }
     } catch (e) {
       print('Play/pause error: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Audio error: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Audio error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 

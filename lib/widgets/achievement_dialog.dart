@@ -80,9 +80,10 @@ class AchievementDialog extends StatelessWidget {
                       ],
                     ),
                     child: Center(
-                      child: Text(
-                        achievement.badgeIcon ?? '🏆',
-                        style: const TextStyle(fontSize: 50),
+                      child: Icon(
+                        Icons.emoji_events,
+                        size: 50,
+                        color: const Color(0xFF6366F1),
                       ),
                     ),
                   ),
@@ -94,7 +95,7 @@ class AchievementDialog extends StatelessWidget {
             
             // Achievement unlocked text
             const Text(
-              'Achievement Unlocked! 🎉',
+              'Achievement Unlocked!',
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 20,
@@ -105,7 +106,7 @@ class AchievementDialog extends StatelessWidget {
             
             const SizedBox(height: 16),
             
-            // Achievement title
+         
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Text(

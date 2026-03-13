@@ -5,6 +5,8 @@ import 'package:wordmaster_dacn/screens/shadowing/shadowing_list_screen.dart';
 import 'package:wordmaster_dacn/services/auth_service.dart';
 import 'package:wordmaster_dacn/services/user_service.dart';
 import '/screens/dictation/dictation_screen.dart';
+import '../../controllers/srs_controller.dart';
+import '../srs/srs_review_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -17,12 +19,12 @@ class _HomeScreenState extends State<HomeScreen>
     with SingleTickerProviderStateMixin {
   final _authService = AuthService.instance;
   final _userService = UserService.instance;
+  late SrsController _srsController;
 
   late AnimationController _animationController;
 
   // Data variables
   Map<String, dynamic>? _userStats;
-  bool _isLoading = true;
 
   @override
   void initState() {
@@ -31,7 +33,20 @@ class _HomeScreenState extends State<HomeScreen>
       vsync: this,
       duration: const Duration(milliseconds: 800),
     )..forward();
+    
+   
+    _srsController = Get.put(SrsController());
+    
     _loadUserData();
+
+   
+    ever(_authService.isLoggedIn, (isLoggedIn) {
+      if (isLoggedIn) {
+        Future.delayed(const Duration(milliseconds: 200), () {
+          _loadUserData();
+        });
+      }
+    });
   }
 
   @override
@@ -42,38 +57,43 @@ class _HomeScreenState extends State<HomeScreen>
 
   Future<void> _loadUserData() async {
     if (!_authService.isLoggedIn.value) {
-      setState(() => _isLoading = false);
       return;
     }
 
-    setState(() => _isLoading = true);
-
     try {
-      final stats = await _userService.getUserStats();
+      // Load user stats and SRS data in parallel
+      final futures = await Future.wait([
+        _userService.getUserStats(),
+        _srsController.loadDailyStats(),
+      ]);
+      
       setState(() {
-        _userStats = stats;
-        _isLoading = false;
+        _userStats = futures[0] as Map<String, dynamic>?;
       });
     } catch (e) {
       print('Error loading home data: $e');
-      setState(() => _isLoading = false);
     }
   }
 
-  // Getters for data with fallback to AuthService or 0
+  // Getters for data with fallback to AuthService or SRS controller
   String get userName => _authService.userName.split(' ').first;
-  int get currentStreak => _userStats?['currentStreak'] ?? _authService.userStreak;
+  int get currentStreak => _userStats?['currentStreak'] ?? 
+      _srsController.currentStreak.value;
   int get totalCardsLearned => _userStats?['totalCardsLearned'] ?? 0;
   int get totalGrammarCards => _userStats?['totalGrammarCards'] ?? 0;
   int get totalQuizzes => _userStats?['totalQuizzesCompleted'] ?? 0;
   int get totalDictation => _userStats?['totalDictationResults'] ?? 0;
   int get totalShadowing => _userStats?['totalShadowingResults'] ?? 0;
   
+  // SRS related getters
+  int get dueReviews => _srsController.dueCount.value;
+  int get reviewedToday => _srsController.reviewedToday.value;
+  
   // Daily goal - can be fetched from API or calculated
   int get targetMinutes => 20;
-  int get completedMinutes => 12; // TODO: Get from daily activity
+  int get completedMinutes => reviewedToday; // Use SRS reviewed cards as completed activity
   int get targetCards => 10;
-  int get completedCards => 6; // TODO: Get from daily activity
+  int get completedCards => reviewedToday;
   double get dailyProgress => (completedMinutes / targetMinutes).clamp(0.0, 1.0);
 
   @override
@@ -285,7 +305,12 @@ class _HomeScreenState extends State<HomeScreen>
             width: double.infinity,
             child: ElevatedButton(
               onPressed: () {
-                // Navigate to study section
+                // Navigate to flashcard section using Get navigation
+                Get.snackbar(
+                  'Bắt đầu học',
+                  'Chuyển đến tab Flashcard để bắt đầu học',
+                  snackPosition: SnackPosition.TOP,
+                );
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.white,
@@ -318,7 +343,7 @@ class _HomeScreenState extends State<HomeScreen>
         'subtitle': 'Học từ vựng',
         'icon': Icons.style_outlined,
         'color': const Color(0xFF6366F1),
-        'pendingItems': 8, // TODO: Get from API
+        'pendingItems': 8, 
       },
       {
         'id': 'grammar',
@@ -358,7 +383,7 @@ class _HomeScreenState extends State<HomeScreen>
           ),
         ),
         const SizedBox(height: 16),
-        // Grid 2x2
+        
         Column(
           children: [
             Row(
@@ -405,21 +430,19 @@ class _HomeScreenState extends State<HomeScreen>
               );
               break;
             case 'flashcards':
+              // Show message to navigate to flashcard tab
               Get.snackbar(
-                'Thông báo',
-                'Tính năng Flashcard đang được phát triển',
+                'Flashcard',
+                'Chuyển đến tab Flashcard để học từ vựng',
                 snackPosition: SnackPosition.TOP,
-                backgroundColor: const Color(0xFF6366F1),
-                colorText: Colors.white,
               );
               break;
             case 'grammar':
+              
               Get.snackbar(
-                'Thông báo',
-                'Tính năng Grammar đang được phát triển',
+                'Grammar',
+                'Chuyển đến tab Flashcard để học ngữ pháp',
                 snackPosition: SnackPosition.TOP,
-                backgroundColor: const Color(0xFF8B5CF6),
-                colorText: Colors.white,
               );
               break;
             case 'shadowing':
@@ -524,16 +547,16 @@ class _HomeScreenState extends State<HomeScreen>
         'color': const Color(0xFF6366F1)
       },
       {
-        'value': totalGrammarCards.toString(),
-        'label': 'Ngữ pháp',
-        'icon': Icons.school_outlined,
-        'color': const Color(0xFF8B5CF6)
+        'value': dueReviews.toString(),
+        'label': 'Cần ôn',
+        'icon': Icons.replay_outlined,
+        'color': const Color(0xFFEF4444)
       },
       {
         'value': currentStreak.toString(),
         'label': 'Chuỗi ngày',
         'icon': Icons.local_fire_department,
-        'color': const Color(0xFFEF4444)
+        'color': const Color(0xFF8B5CF6)
       },
     ];
 
@@ -553,8 +576,12 @@ class _HomeScreenState extends State<HomeScreen>
             ),
             TextButton(
               onPressed: () {
-                // Navigate to profile tab
-                DefaultTabController.of(context)?.animateTo(3);
+                // Show more detailed stats or navigate to profile
+                Get.snackbar(
+                  'Thống kê',
+                  'Xem thống kê chi tiết trong tab Profile',
+                  snackPosition: SnackPosition.TOP,
+                );
               },
               child: const Text(
                 'Xem chi tiết',
@@ -577,50 +604,63 @@ class _HomeScreenState extends State<HomeScreen>
                 padding: EdgeInsets.only(
                   right: index < stats.length - 1 ? 12 : 0,
                 ),
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.grey[200]!),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.03),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    children: [
-                      Icon(
-                        stat['icon'] as IconData,
-                        color: stat['color'] as Color,
-                        size: 24,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        stat['value'] as String,
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF1E293B),
+                child: GestureDetector(
+                  onTap: () {
+                    // Navigate to SRS Review if it's "Cần ôn" stat
+                    if (stat['label'] == 'Cần ôn' && dueReviews > 0) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const SrsReviewScreen(),
                         ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        stat['label'] as String,
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: Colors.grey[600],
+                      );
+                    }
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.grey[200]!),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.03),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
                         ),
-                        textAlign: TextAlign.center,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        Icon(
+                          stat['icon'] as IconData,
+                          color: stat['color'] as Color,
+                          size: 24,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          stat['value'] as String,
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF1E293B),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          stat['label'] as String,
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey[600],
+                          ),
+                          textAlign: TextAlign.center,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
                 ),
+              ),
               ),
             );
           }).toList(),

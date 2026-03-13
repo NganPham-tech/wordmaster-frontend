@@ -4,7 +4,7 @@ import '/data/models/shadowing_model.dart';
 import '/controllers/shadowing_controller.dart';
 import 'shadowing_segment_practice_screen.dart';
 import 'widgets/audio_wave.dart';
-// D:\DemoDACN\wordmaster_dacn\lib\screens\shadowing\shadowing_player_screen.dart
+
 class ShadowingPlayerScreen extends StatefulWidget {
   final ShadowingContentDetail content;
 

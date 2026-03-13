@@ -7,7 +7,7 @@ class AchievementService extends GetxService {
   static AchievementService get instance => Get.find();
   final _apiService = ApiService.instance;
 
-  // API call methods
+
   Future<List<Achievement>> getUserAchievements() async {
     try {
       print('Calling API: /users/achievements');
@@ -53,7 +53,7 @@ class AchievementService extends GetxService {
     }
   }
 
-  // Mock data for testing
+
   List<Achievement> getMockAchievements() {
     return [
       Achievement(

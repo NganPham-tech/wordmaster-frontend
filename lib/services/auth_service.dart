@@ -1,16 +1,16 @@
-// lib/services/auth_service.dart
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'api_service.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import '../controllers/srs_controller.dart';
 class AuthService extends GetxController {
   static AuthService get instance => Get.find();
   
   final _storage = GetStorage();
   final _apiService = ApiService.instance;
   
-  // Simple initialization (version 6.x)
+ 
   final GoogleSignIn _googleSignIn = GoogleSignIn(
   scopes: ['email', 'profile'],
   serverClientId: dotenv.env['GOOGLE_WEB_CLIENT_ID'], 
@@ -63,6 +63,9 @@ class AuthService extends GetxController {
           currentUser.value = Map<String, dynamic>.from(user ?? {});
           isLoggedIn.value = true;
 
+          // Reset SRS Controller for new user
+          _resetSrsControllerForNewUser();
+
           return true;
         }
       }
@@ -108,7 +111,7 @@ class AuthService extends GetxController {
       print('Got tokens - idToken: ${idToken.substring(0, 20)}...');
       print('accessToken: ${accessToken?.substring(0, 20) ?? "null"}...');
 
-      // Step 3: Send tokens to backend
+     
       final response = await _apiService.post('/auth/google', {
         'idToken': idToken,
         'accessToken': accessToken ?? '',
@@ -131,6 +134,9 @@ class AuthService extends GetxController {
           currentUser.value = Map<String, dynamic>.from(user ?? {});
           isLoggedIn.value = true;
 
+          // Reset SRS Controller for new user
+          _resetSrsControllerForNewUser();
+
           print('Google login successful!');
           return true;
         } else {
@@ -140,7 +146,7 @@ class AuthService extends GetxController {
         print('Backend HTTP error: $status');
       }
 
-      // Clean up if backend fails
+   
       await _googleSignIn.signOut();
       return false;
 
@@ -232,6 +238,16 @@ class AuthService extends GetxController {
     await _storage.remove('auth_token');
     await _storage.remove('current_user');
     
+    // Reset SRS Controller data if it exists
+    try {
+      if (Get.isRegistered<SrsController>()) {
+        final srsController = Get.find<SrsController>();
+        srsController.resetUserData();
+        print('SRS Controller data reset');
+      }
+    } catch (e) {
+      print('Error resetting SRS controller: $e');
+    }
  
     token.value = null;
     currentUser.value = null;
@@ -272,5 +288,22 @@ class AuthService extends GetxController {
   
   int get userId {
     return currentUser.value?['id'] ?? 0;
+  }
+
+  // Helper method to reset SRS controller for new user
+  void _resetSrsControllerForNewUser() {
+    try {
+      if (Get.isRegistered<SrsController>()) {
+        final srsController = Get.find<SrsController>();
+        srsController.resetUserData();
+        // Reload data for new user
+        Future.delayed(const Duration(milliseconds: 500), () {
+          srsController.loadDailyStats();
+        });
+        print('SRS Controller reset for new user');
+      }
+    } catch (e) {
+      print('Error resetting SRS controller for new user: $e');
+    }
   }
 }

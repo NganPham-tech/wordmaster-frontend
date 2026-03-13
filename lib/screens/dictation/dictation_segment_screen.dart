@@ -1,5 +1,4 @@
 // File: lib/screens/dictation/dictation_segment_screen.dart
-
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -81,7 +80,7 @@ class _DictationSegmentScreenState extends State<DictationSegmentScreen>
       return widget.content.audioURL!;
     }
     
-    // Fallback: Sử dụng sourceURL (YouTube)
+    
     print('Debug - audioPath: ${widget.content.audioPath}');
     print('Debug - sourceURL: ${widget.content.sourceURL}');
     print('Debug - using YouTube URL as fallback: ${widget.content.sourceURL}');
@@ -250,6 +249,7 @@ class _DictationSegmentScreenState extends State<DictationSegmentScreen>
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(
         title: Text(
           'Câu ${_currentSegmentIndex + 1}/${segments.length}',
@@ -287,7 +287,7 @@ class _DictationSegmentScreenState extends State<DictationSegmentScreen>
       ),
       body: Column(
         children: [
-          // 🆕 SEGMENT AUDIO PLAYER
+          // SEGMENT AUDIO PLAYER
           Padding(
             padding: const EdgeInsets.all(16),
             child: SegmentAudioPlayer(

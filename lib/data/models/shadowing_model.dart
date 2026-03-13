@@ -1,5 +1,3 @@
-// lib/data/models/shadowing_model.dart
-// Updated with STT provider information
 import '../../config/env_config.dart';
 
 class SegmentResult {
@@ -123,23 +121,23 @@ class ShadowingContent {
     
     String cleanPath = audioPath!;
     
-    // If already a full URL, return as-is
+    
     if (cleanPath.startsWith('http')) {
       return cleanPath;
     }
     
-    // Clean up duplicate /uploads/shadowing/ prefixes
+    
     if (cleanPath.startsWith('/uploads/shadowing/')) {
-      // Remove the first /uploads/shadowing/ prefix
+      
       cleanPath = cleanPath.substring('/uploads/shadowing/'.length);
     }
     
-    // Remove any additional /uploads/shadowing/ that might be embedded
+    
     while (cleanPath.startsWith('uploads/shadowing/')) {
       cleanPath = cleanPath.substring('uploads/shadowing/'.length);
     }
     
-    // Now build the final URL
+  
     return '${EnvConfig.baseUrl.replaceAll('/api', '')}/uploads/shadowing/$cleanPath';
   }
 
@@ -294,7 +292,7 @@ enum RecordState {
   processing,
 }
 
-// STT Provider Info
+
 class STTProviderInfo {
   final String name;
   final String mode;

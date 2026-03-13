@@ -22,7 +22,7 @@ class _ShadowingSegmentPracticeScreenState
   @override
   void initState() {
     super.initState();
-    // Try to find controller, create if not found
+
     try {
       controller = Get.find<ShadowingController>();
     } catch (e) {
@@ -39,7 +39,18 @@ class _ShadowingSegmentPracticeScreenState
   bool _isLooping = false;
   double _playbackSpeed = 1.0;
 
-
+  // Loading messages
+  final List<String> _loadingMessages = [
+    "AI đang lắng nghe bạn...",
+    "Đang phân tích ngữ điệu...",
+    "Đang chấm điểm phát âm...",
+    "Đang so sánh với bản gốc...",
+    "Đang đánh giá độ chính xác...",
+    "Đang xử lý âm thanh...",
+    "AI đang suy nghĩ...",
+    "Đang kiểm tra từng từ...",
+  ];
+  String _currentLoadingMessage = "";
 
   @override
   void dispose() {
@@ -83,7 +94,7 @@ class _ShadowingSegmentPracticeScreenState
         });
       }
       
-      // Show error if recording failed
+     
       if (controller.error.value.isNotEmpty) {
         Get.snackbar(
           'Recording Error',
@@ -127,8 +138,15 @@ class _ShadowingSegmentPracticeScreenState
     if (mounted) {
       setState(() {
         _recordState = RecordState.processing;
+        // Show random loading message
+        _currentLoadingMessage = _loadingMessages[
+          DateTime.now().millisecondsSinceEpoch % _loadingMessages.length
+        ];
       });
     }
+
+    // Simulate more realistic processing time
+    await Future.delayed(const Duration(milliseconds: 500));
 
     try {
       final result = await controller.submitSegmentRecording(
@@ -143,6 +161,7 @@ class _ShadowingSegmentPracticeScreenState
             _segmentResults[_currentSegment.id] = result;
             _recordState = RecordState.idle;
             _recordedAudioPath = null;
+            _currentLoadingMessage = "";
           });
         }
 
@@ -151,6 +170,7 @@ class _ShadowingSegmentPracticeScreenState
         if (mounted) {
           setState(() {
             _recordState = RecordState.recorded;
+            _currentLoadingMessage = "";
           });
         }
         
@@ -167,6 +187,7 @@ class _ShadowingSegmentPracticeScreenState
       if (mounted) {
         setState(() {
           _recordState = RecordState.recorded;
+          _currentLoadingMessage = "";
         });
       }
       
@@ -425,7 +446,7 @@ class _ShadowingSegmentPracticeScreenState
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: const Text('Session Complete! 🎉'),
+        title: const Text('Session Complete!'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -820,7 +841,17 @@ class _ShadowingSegmentPracticeScreenState
             ] else if (_recordState == RecordState.processing) ...[
               const CircularProgressIndicator(),
               const SizedBox(height: 16),
-              const Text('Analyzing your recording...'),
+              Text(
+                _currentLoadingMessage.isNotEmpty 
+                    ? _currentLoadingMessage 
+                    : 'Đang chấm điểm...',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  color: Color(0xFF374151),
+                ),
+                textAlign: TextAlign.center,
+              ),
             ],
           ],
         ),
@@ -879,15 +910,15 @@ class _ShadowingSegmentPracticeScreenState
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('1. 🎧 Listen to the segment'),
+            Text('1. Listen to the segment'),
             SizedBox(height: 8),
-            Text('2. 🎤 Record yourself repeating it'),
+            Text('2. Record yourself repeating it'),
             SizedBox(height: 8),
-            Text('3. 📊 Get instant feedback'),
+            Text('3. Get instant feedback'),
             SizedBox(height: 8),
-            Text('4. 🔄 Practice until perfect!'),
+            Text('4. Practice until perfect!'),
             SizedBox(height: 8),
-            Text('5. ➡️ Move to next segment'),
+            Text('5. Move to next segment'),
           ],
         ),
         actions: [

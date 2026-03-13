@@ -88,13 +88,13 @@ class DictationController extends GetxController {
       if (response.isNotEmpty) {
         final List<DictationContent> newContent = response
             .map((json) {
-              print('📋 Raw JSON for content: ${json['title']}');
-              print('📋 Segments in JSON: ${json['segments']?.length ?? 0} segments');
+              print('Raw JSON for content: ${json['title']}');
+              print('Segments in JSON: ${json['segments']?.length ?? 0} segments');
               
               final content = DictationContent.fromJson(json);
               
-              print('📋 Parsed content - hasSegments: ${content.hasSegments}');
-              print('📋 Parsed content - segments count: ${content.segments?.length ?? 0}');
+              print('Parsed content - hasSegments: ${content.hasSegments}');
+              print('Parsed content - segments count: ${content.segments?.length ?? 0}');
               
               return content;
             })
@@ -107,8 +107,7 @@ class DictationController extends GetxController {
         }
 
         currentPage.value = page;
-        // Note: You may need to update API to return pagination info
-        // For now, assume there might be more if we got a full page
+       
         totalPages.value = newContent.length == limit ? page + 1 : page;
       }
     } catch (e) {
@@ -124,7 +123,7 @@ class DictationController extends GetxController {
     }
   }
 
-  // Get single dictation content by ID
+
   Future<DictationContent?> getDictationById(int id) async {
     try {
       final response = await _apiService.getDictationById(id);
@@ -143,7 +142,7 @@ class DictationController extends GetxController {
     }
   }
 
-  // Add YouTube video
+
   Future<bool> addYouTubeVideo({
     required int userId,
     required String sourceURL,
@@ -160,7 +159,7 @@ class DictationController extends GetxController {
       );
 
       if (response['success'] == true) {
-        // Refresh the list
+      
         await fetchDictationContent();
         Get.snackbar(
           'Success',
@@ -186,7 +185,7 @@ class DictationController extends GetxController {
     }
   }
 
-  // Submit dictation result
+ 
   Future<Map<String, dynamic>?> submitResult({
     required int contentId,
     required int userId,
@@ -216,25 +215,25 @@ class DictationController extends GetxController {
     }
   }
 
-  // Update search query
+  
   void updateSearchQuery(String query) {
     searchQuery.value = query;
   }
 
-  // Update filters
+ 
   void updateDifficulty(String difficulty) {
     selectedDifficulty.value = difficulty;
-    fetchDictationContent(); // Refresh with new filter
+    fetchDictationContent(); 
   }
 
   void updateSourceType(String sourceType) {
     selectedSourceType.value = sourceType;
-    fetchDictationContent(); // Refresh with new filter
+    fetchDictationContent(); 
   }
 
   void updateAccent(String accent) {
     selectedAccent.value = accent;
-    fetchDictationContent(); // Refresh with new filter
+    fetchDictationContent(); 
   }
 
   // Refresh content

@@ -43,7 +43,7 @@ class AudioPlayerBar extends StatelessWidget {
       ),
       child: Column(
         children: [
-          // Progress Bar
+        
           Slider(
             value: currentPosition.clamp(0, totalDuration),
             min: 0,
@@ -68,7 +68,7 @@ class AudioPlayerBar extends StatelessWidget {
               
               const Spacer(),
               
-              // Controls
+              
               Row(
                 children: [
                   if (onPrevious != null)

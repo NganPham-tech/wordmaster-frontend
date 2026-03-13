@@ -305,6 +305,7 @@ class _QuizScreenState extends State<QuizScreen> {
           ),
         ],
       ),
+      resizeToAvoidBottomInset: true,
       body: Obx(() {
         final ctrl = Get.find<QuizController>();
         if (ctrl.isLoading.value) {
@@ -413,7 +414,7 @@ class _QuizScreenState extends State<QuizScreen> {
 
             // Question content
             Expanded(
-              child: Padding(
+              child: SingleChildScrollView(
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -482,6 +483,9 @@ class _QuizScreenState extends State<QuizScreen> {
                     // Explanation
                     if (_showExplanation)
                       _buildExplanation(currentQuestion),
+                    
+                    // Add bottom padding to ensure content is above keyboard
+                    const SizedBox(height: 100),
                   ],
                 ),
               ),
@@ -496,11 +500,9 @@ class _QuizScreenState extends State<QuizScreen> {
   }
 
   Widget _buildFillInBlankInput(QuizQuestion question) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
           const Text(
             'Your answer:',
             style: TextStyle(
@@ -546,7 +548,6 @@ class _QuizScreenState extends State<QuizScreen> {
             _buildFillInBlankFeedback(question),
           ],
         ],
-      ),
     );
   }
 

@@ -1,6 +1,4 @@
 // lib/screens/dictation/dictation_full_screen.dart
-
-
 import 'package:flutter/material.dart';
 import '/data/models/dictation_model.dart';
 import 'widgets/real_audio_player.dart';
@@ -56,7 +54,7 @@ class _DictationFullScreenState extends State<DictationFullScreen>
       contentId: int.parse(widget.content.id),
       contentTitle: widget.content.title,
       mode: 'Practice',
-      totalItems: 1, // 1 bài dictation
+      totalItems: 1, 
     );
   }
 
@@ -108,13 +106,11 @@ class _DictationFullScreenState extends State<DictationFullScreen>
 
  
   double _calculateScore(int accuracy) {
-    // Base score: 100 points
-    // Accuracy multiplier
+ 
     double baseScore = 100.0;
     double accuracyMultiplier = accuracy / 100.0;
     
-    // Time bonus (if completed quickly)
-    // final timeBonus = _calculateTimeBonus();
+
     
     return baseScore * accuracyMultiplier;
   }
@@ -144,7 +140,7 @@ class _DictationFullScreenState extends State<DictationFullScreen>
       };
     }
     
-    // Simple word matching
+ 
     int correctWords = 0;
     for (final word in originalWords) {
       if (userWords.contains(word)) {
@@ -207,6 +203,7 @@ class _DictationFullScreenState extends State<DictationFullScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -383,7 +380,7 @@ class _DictationFullScreenState extends State<DictationFullScreen>
                       const SizedBox(height: 16),
                     ],
                     
-                    // Transcript (Conditional)
+                  
                     if (_showTranscript && !_hasSubmitted) ...[
                       Container(
                         padding: const EdgeInsets.all(16),

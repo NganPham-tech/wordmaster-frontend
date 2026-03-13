@@ -4,7 +4,7 @@ import 'dart:io';
 
 class EnvConfig {
  
-  static const String LAPTOP_IP = '192.168.0.3'; 
+  static const String LAPTOP_IP = '192.168.0.4'; 
   
   /// Backend port
   static const int PORT = 3000;

@@ -1,4 +1,3 @@
-// lib/screens/auth/register_screen.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../services/auth_service.dart';
@@ -94,8 +93,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() => _isLoading = false);
 
     if (success) {
-      Get.back(); // Quay lại login screen
-      Get.back(); // Quay lại profile screen
+      Get.back(); 
+      Get.back();
       Get.snackbar(
         'Đăng ký thành công',
         'Chào mừng bạn đến với WordMaster!',
@@ -154,6 +153,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -186,7 +186,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 const SizedBox(height: 32),
 
-                // Social Register Buttons
+            
                 _buildSocialLoginButton(
                   onTap: _handleGoogleRegister,
                   icon: 'assets/images/google_icon.png',

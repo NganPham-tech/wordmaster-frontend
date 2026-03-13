@@ -72,7 +72,7 @@ class FeynmanController extends GetxController {
     }
   }
 
-  // Clear current note
+ 
   void clearNote() {
     currentNote.value = null;
   }

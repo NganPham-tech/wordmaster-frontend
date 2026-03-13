@@ -6,17 +6,16 @@ class TtsService {
   static bool _isInitialized = false;
   static bool _isSpeaking = false;
 
-  // Khởi tạo TTS
   static Future<void> initialize() async {
     if (_isInitialized) return;
 
     _flutterTts = FlutterTts();
 
     try {
-      // Ensure the plugin will report when speaking completes
+      
       await _flutterTts!.awaitSpeakCompletion(true);
 
-      // Handlers to track speaking state and errors
+      
       _flutterTts!.setStartHandler(() {
         _isSpeaking = true;
         print('TTS: started speaking');
@@ -73,17 +72,17 @@ class TtsService {
     }
 
     try {
-      // Guard against concurrent speak calls
+    
       if (_isSpeaking) {
         print(
           'TTS: already speaking, stopping previous utterance before starting new one',
         );
         await _flutterTts!.stop();
-        // Give a tiny moment to fully stop
+        
         await Future.delayed(const Duration(milliseconds: 100));
       }
 
-      // On some devices/emulators calling setLanguage immediately before speak avoids errors
+      
       try {
         await _flutterTts!.setLanguage('en-US');
       } catch (_) {}
@@ -91,7 +90,7 @@ class TtsService {
       print('TTS speaking: $text');
       var result = await _flutterTts!.speak(text);
 
-      // Some platforms return numeric result codes; log them for diagnosis
+  
       print('TTS speak result: $result');
     } catch (e) {
       _isSpeaking = false;

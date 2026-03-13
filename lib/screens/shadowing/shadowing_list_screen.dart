@@ -14,6 +14,7 @@ class ShadowingListScreen extends StatelessWidget {
     final searchController = TextEditingController();
 
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(
         title: const Text(
           'Shadowing Practice',
@@ -417,14 +418,14 @@ class ShadowingListScreen extends StatelessWidget {
     ShadowingController controller,
   ) async {
     try {
-      // Load full content detail with segments using GetX
+     
       final detailContent = await controller.getContentDetail(content.id);
 
       if (detailContent != null) {
         Get.to(() => ShadowingPlayerScreen(content: detailContent));
       }
     } catch (e) {
-      // Error already handled in controller
+  
     }
   }
 

@@ -60,7 +60,6 @@ class QuizController extends GetxController {
       userAnswers.add(answerIndex);
     }
 
-    // Lưu text answer cho FillInBlank
     if (textAnswer != null) {
       userTextAnswers[currentQuestionIndex.value] = textAnswer;
     }
@@ -95,7 +94,7 @@ class QuizController extends GetxController {
 
       // Kiểm tra theo loại câu hỏi
       if (question.questionType == 'FillInBlank') {
-        // So sánh text answer (case-insensitive)
+      
         if (userTextAnswers.containsKey(i)) {
           final userAnswer = userTextAnswers[i]!.trim().toLowerCase();
           final correctAnswer = question.correctAnswer.trim().toLowerCase();
@@ -104,7 +103,7 @@ class QuizController extends GetxController {
           }
         }
       } else {
-        // Multiple choice - so sánh index
+       
         if (i < userAnswers.length &&
             userAnswers[i] == question.correctAnswerIndex) {
           correctAnswers++;

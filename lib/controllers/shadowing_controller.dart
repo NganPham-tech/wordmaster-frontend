@@ -5,10 +5,10 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'dart:io';
 import '/data/models/shadowing_model.dart';
 import '../config/env_config.dart';
 import '../services/auth_service.dart';
+import '../services/api_service.dart';
 //D:\DemoDACN\wordmaster_dacn\lib\controllers\shadowing_controller.dart
 class ShadowingController extends GetxController {
   final AudioRecorder _audioRecorder = AudioRecorder();
@@ -16,32 +16,32 @@ class ShadowingController extends GetxController {
   
   String get baseUrl => '${EnvConfig.baseUrl}/shadowing';
   
-  // Observable states
+  
   var isLoading = false.obs;
   var error = ''.obs;
   var shadowingList = <ShadowingContent>[].obs;
   var currentContent = Rx<ShadowingContentDetail?>(null);
   
-  // STT Provider Info
+  
   var sttProviderInfo = Rx<STTProviderInfo?>(null);
   
-  // Filter states
+ 
   var selectedDifficulty = 'all'.obs;
   var selectedAccent = 'all'.obs;
   var selectedSpeechRate = 'all'.obs;
   
-  // Player states
+ 
   var isPlaying = false.obs;
   var currentPosition = Duration.zero.obs;
   var totalDuration = Duration.zero.obs;
   var playbackSpeed = 1.0.obs;
   
-  // Recording states
+  
   var isRecording = false.obs;
   var recordingPath = ''.obs;
   var isProcessing = false.obs;
   
-  // Practice mode
+
   var practiceMode = PracticeMode.segment.obs;
   var currentSegmentIndex = 0.obs;
   
@@ -90,21 +90,15 @@ class ShadowingController extends GetxController {
   
   Future<void> loadSTTInfo() async {
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/stt-info'),
-      );
+      final apiService = Get.find<ApiService>();
+      final data = await apiService.getSTTInfo();
+      sttProviderInfo.value = STTProviderInfo.fromJson(data);
       
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        sttProviderInfo.value = STTProviderInfo.fromJson(data['data']);
-        
-        print(' STT Provider: ${sttProviderInfo.value?.name}');
-        print('   Mode: ${sttProviderInfo.value?.mode}');
-        print('   Mock: ${sttProviderInfo.value?.isMock}');
-      }
+      print(' STT Provider: ${sttProviderInfo.value?.name}');
+      print('   Mode: ${sttProviderInfo.value?.mode}');
+      print('   Mock: ${sttProviderInfo.value?.isMock}');
     } catch (e) {
       print(' Failed to load STT info: $e');
-      // Don't show error to user - it's not critical
     }
   }
   
@@ -214,7 +208,7 @@ class ShadowingController extends GetxController {
   
   Future<void> startRecording() async {
     try {
-      // Request permissions explicitly
+     
       var status = await Permission.microphone.status;
       if (!status.isGranted) {
         status = await Permission.microphone.request();
@@ -230,7 +224,7 @@ class ShadowingController extends GetxController {
         final dir = await getApplicationDocumentsDirectory();
         final path = '${dir.path}/shadowing_${DateTime.now().millisecondsSinceEpoch}.m4a';
         
-        print('🎤 Starting recording to: $path');
+        print('Starting recording to: $path');
         
         await _audioRecorder.start(
           const RecordConfig(
@@ -243,13 +237,13 @@ class ShadowingController extends GetxController {
         
         isRecording.value = true;
         recordingPath.value = path;
-        error.value = ''; // Clear any previous errors
-        print('🎤 Recording started successfully');
+        error.value = ''; 
+        print('Recording started successfully');
       } else {
         error.value = 'AudioRecorder permission check failed';
       }
     } catch (e) {
-      print('🎤 Recording error: $e');
+      print('Recording error: $e');
       error.value = 'Failed to start recording: $e';
       isRecording.value = false;
     }
@@ -257,22 +251,22 @@ class ShadowingController extends GetxController {
   
   Future<String?> stopRecording() async {
     try {
-      print('🎤 Stopping recording...');
+      print('Stopping recording...');
       final path = await _audioRecorder.stop();
       isRecording.value = false;
       
       if (path != null) {
-        print('🎤 Recording saved to: $path');
+        print('Recording saved to: $path');
         recordingPath.value = path;
-        error.value = ''; // Clear any previous errors
+        error.value = ''; 
         return path;
       } else {
-        print('🎤 Recording stopped but no path returned');
+        print('Recording stopped but no path returned');
         error.value = 'Recording failed - no file created';
         return null;
       }
     } catch (e) {
-      print('🎤 Stop recording error: $e');
+      print('Stop recording error: $e');
       error.value = 'Failed to stop recording: $e';
       isRecording.value = false;
       return null;
@@ -296,7 +290,7 @@ class ShadowingController extends GetxController {
       );
       
       final userId = AuthService.instance.userId;
-      // Fallback to user 2 (regular user) if not logged in
+    
       final safeUserId = userId > 0 ? userId : 2;
       request.fields['userId'] = safeUserId.toString();
       request.fields['segmentId'] = segmentId.toString();
@@ -345,7 +339,7 @@ class ShadowingController extends GetxController {
       );
       
       final userId = AuthService.instance.userId;
-      // Fallback to user 2 (regular user) if not logged in
+     
       final safeUserId = userId > 0 ? userId : 2;
       request.fields['userId'] = safeUserId.toString();
       request.files.add(await http.MultipartFile.fromPath('audio', audioPath));
